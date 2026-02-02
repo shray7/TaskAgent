@@ -182,9 +182,9 @@
   --bg-active: #222222;
   
   --text-primary: #fafafa;
-  --text-secondary: #a3a3a3;
-  --text-tertiary: #737373;
-  --text-muted: #525252;
+  --text-secondary: #d4d4d4;
+  --text-tertiary: #a3a3a3;
+  --text-muted: #858585;
   --text-inverse: var(--color-dark-bg);
   
   --border-primary: #262626;
@@ -226,7 +226,7 @@
   --header-bg: var(--color-dark-bg);
   --header-border: #262626;
   --header-text: #fafafa;
-  --header-text-muted: #a3a3a3;
+  --header-text-muted: #d4d4d4;
   
   /* Status badges - dark theme */
   --badge-red-bg: rgba(239, 68, 68, 0.15);

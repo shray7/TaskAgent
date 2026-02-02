@@ -103,7 +103,7 @@
 .my-tasks-view .stat-value { font-size: 1.25rem; font-weight: 700; }
 .my-tasks-view .stat-label { font-size: 0.75rem; color: var(--text-muted); }
 
-.my-tasks-view .icon-red { background-color: rgba(239,68,68,0.1); color: #ef4444; }
+.my-tasks-view .icon-red { background-color: var(--badge-red-bg); color: var(--badge-red-text); }
 
 .my-tasks-view .task-item {
   padding: 1rem;

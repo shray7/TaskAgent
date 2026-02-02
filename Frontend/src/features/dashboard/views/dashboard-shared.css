@@ -249,9 +249,9 @@
 .dashboard .status-todo { background-color: var(--status-blue-bg, rgba(59,130,246,0.1)); color: var(--status-blue); }
 .dashboard .status-in-progress { background-color: var(--status-amber-bg, rgba(245,158,11,0.1)); color: var(--status-amber); }
 .dashboard .status-completed { background-color: var(--status-green-bg, rgba(34,197,94,0.1)); color: var(--status-green); }
-.dashboard .priority-high { background-color: rgba(239,68,68,0.1); color: #ef4444; }
-.dashboard .priority-medium { background-color: rgba(245,158,11,0.1); color: #f59e0b; }
-.dashboard .priority-low { background-color: rgba(107,114,128,0.1); color: #6b7280; }
+.dashboard .priority-high { background-color: var(--badge-red-bg); color: var(--badge-red-text); }
+.dashboard .priority-medium { background-color: var(--badge-amber-bg); color: var(--badge-amber-text); }
+.dashboard .priority-low { background-color: var(--badge-gray-bg); color: var(--badge-gray-text); }
 
 .dashboard .dashboard-team-section { margin-top: 2rem; padding: 1.25rem; }
 .dashboard .dashboard-team-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }

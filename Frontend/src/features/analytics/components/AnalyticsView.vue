@@ -329,8 +329,11 @@
 <script setup lang="ts">
 import { TrendingDown, Filter, Users, AlertTriangle, Clock, BarChart3, Tag, ChevronLeft, ChevronRight } from 'lucide-vue-next'
 import { ref, computed, watch } from 'vue'
+import { useThemeStore } from '@/stores/theme'
 import { getInitials, getUserColor } from '@/utils/initials'
 import type { Task, Sprint } from '@/types'
+
+const themeStore = useThemeStore()
 
 const props = withDefaults(
   defineProps<{
@@ -614,13 +617,14 @@ const tagBreakdownForSprint = computed(() => {
     }))
     .sort((a, b) => b.count - a.count)
   
-  // Add "No Tag" if there are tasks without tags
+  // Add "No Tag" if there are tasks without tags (use theme-aware gray)
   if (tasksWithoutTags > 0) {
+    const noTagColor = themeStore.resolvedTheme === 'dark' ? '#a3a3a3' : '#9ca3af'
     result.push({
       tag: 'No Tag',
       count: tasksWithoutTags,
       percent: totalTags + tasksWithoutTags > 0 ? (tasksWithoutTags / (totalTags + tasksWithoutTags)) * 100 : 0,
-      color: '#9ca3af'
+      color: noTagColor
     })
   }
   
@@ -629,10 +633,11 @@ const tagBreakdownForSprint = computed(() => {
 
 // Calculate pie chart segments (cumulative angles for conic-gradient)
 const pieChartGradient = computed(() => {
-  if (tagBreakdownForSprint.value.length === 0) return 'conic-gradient(#e5e7eb 0% 100%)'
+  const emptyFill = themeStore.resolvedTheme === 'dark' ? '#404040' : '#e5e7eb'
+  if (tagBreakdownForSprint.value.length === 0) return `conic-gradient(${emptyFill} 0% 100%)`
   
   const total = tagBreakdownForSprint.value.reduce((sum, t) => sum + t.count, 0)
-  if (total === 0) return 'conic-gradient(#e5e7eb 0% 100%)'
+  if (total === 0) return `conic-gradient(${emptyFill} 0% 100%)`
   
   const segments: string[] = []
   let cumulative = 0
@@ -840,6 +845,10 @@ function formatDueDate(d: Date | string | undefined): string {
   opacity: 0.5;
 }
 
+:root.dark .chart-grid line {
+  opacity: 0.6;
+}
+
 .burndown-chart-legend {
   display: flex;
   justify-content: center;
@@ -862,7 +871,7 @@ function formatDueDate(d: Date | string | undefined): string {
 
 .legend-ideal {
   background: var(--text-tertiary);
-  opacity: 0.6;
+  opacity: 0.7;
 }
 
 .legend-actual {
@@ -1154,8 +1163,12 @@ function formatDueDate(d: Date | string | undefined): string {
 }
 
 .tag-nav-btn:disabled {
-  opacity: 0.4;
+  opacity: 0.5;
   cursor: not-allowed;
+}
+
+:root.dark .tag-nav-btn:disabled {
+  opacity: 0.65;
 }
 
 .nav-icon {

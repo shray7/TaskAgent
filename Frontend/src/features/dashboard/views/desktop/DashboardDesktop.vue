@@ -39,35 +39,36 @@
 
     <main class="main-content">
       <div class="content-header animate-fade-in">
-        <div class="header-actions">
-          <div class="view-toggle">
-            <button 
-              @click="viewMode = 'list'" 
-              :class="['view-btn', { active: viewMode === 'list' }]"
-              title="List view"
-            >
-              <List class="view-icon" />
-            </button>
-            <button 
-              @click="viewMode = 'columns'" 
-              :class="['view-btn', { active: viewMode === 'columns' }]"
-              title="Column view"
-            >
-              <Columns3 class="view-icon" />
-            </button>
-            <button 
-              @click="viewMode = 'analytics'" 
-              :class="['view-btn', { active: viewMode === 'analytics' }]"
-              title="Analytics"
-            >
-              <BarChart2 class="view-icon" />
-            </button>
-          </div>
-          <button @click="showTaskForm = true" class="btn btn-primary">
-            <Plus class="btn-icon" />
-            <span>New Task</span>
+        <div class="view-toggle">
+          <button 
+            @click="viewMode = 'list'" 
+            :class="['view-btn', { active: viewMode === 'list' }]"
+            title="List view"
+          >
+            <List class="view-icon" />
+            <span class="view-label">List</span>
+          </button>
+          <button 
+            @click="viewMode = 'columns'" 
+            :class="['view-btn', { active: viewMode === 'columns' }]"
+            title="Board view"
+          >
+            <Columns3 class="view-icon" />
+            <span class="view-label">Board</span>
+          </button>
+          <button 
+            @click="viewMode = 'analytics'" 
+            :class="['view-btn', { active: viewMode === 'analytics' }]"
+            title="Analytics"
+          >
+            <BarChart2 class="view-icon" />
+            <span class="view-label">Analytics</span>
           </button>
         </div>
+        <button @click="showTaskForm = true" class="btn btn-primary">
+          <Plus class="btn-icon" />
+          <span>New Task</span>
+        </button>
       </div>
 
       <div class="stats-grid animate-fade-in">
@@ -925,15 +926,9 @@ onMounted(async () => {
 
 .content-header {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
   align-items: center;
   margin-bottom: 2rem;
-}
-
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
 }
 
 .view-toggle {
@@ -943,18 +938,22 @@ onMounted(async () => {
   border: 1px solid var(--border-primary);
   border-radius: 0.5rem;
   padding: 0.25rem;
+  gap: 0.125rem;
 }
 
 .view-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0.5rem;
+  gap: 0.375rem;
+  padding: 0.5rem 0.75rem;
   border: none;
   background: transparent;
   border-radius: 0.375rem;
   cursor: pointer;
   color: var(--text-muted);
+  font-size: 0.875rem;
+  font-weight: 500;
   transition: all 0.15s ease;
 }
 
@@ -971,6 +970,11 @@ onMounted(async () => {
 .view-icon {
   width: 1.125rem;
   height: 1.125rem;
+  flex-shrink: 0;
+}
+
+.view-label {
+  white-space: nowrap;
 }
 
 .stats-grid {
@@ -1533,18 +1537,18 @@ onMounted(async () => {
 }
 
 .priority-high {
-  background-color: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
+  background-color: var(--badge-red-bg);
+  color: var(--badge-red-text);
 }
 
 .priority-medium {
-  background-color: rgba(245, 158, 11, 0.1);
-  color: #f59e0b;
+  background-color: var(--badge-amber-bg);
+  color: var(--badge-amber-text);
 }
 
 .priority-low {
-  background-color: rgba(107, 114, 128, 0.1);
-  color: #6b7280;
+  background-color: var(--badge-gray-bg);
+  color: var(--badge-gray-text);
 }
 
 .assignee-cell {
