@@ -1,5 +1,16 @@
 <template>
   <div class="login-page">
+    <div class="login-bg">
+      <div class="login-bg-shapes">
+        <div class="shape shape-1" aria-hidden="true"></div>
+        <div class="shape shape-2" aria-hidden="true"></div>
+        <div class="shape shape-3" aria-hidden="true"></div>
+        <div class="shape shape-4" aria-hidden="true"></div>
+        <div class="shape shape-5" aria-hidden="true"></div>
+        <div class="shape shape-6" aria-hidden="true"></div>
+        <div class="shape shape-7" aria-hidden="true"></div>
+      </div>
+    </div>
     <div class="login-container">
       <div class="login-card card animate-slide-in">
         <div class="login-header">
@@ -138,7 +149,129 @@ const handleLogin = async () => {
   align-items: center;
   justify-content: center;
   padding: 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.login-bg {
+  position: absolute;
+  inset: 0;
   background: var(--login-gradient);
+  z-index: 0;
+}
+
+.login-bg-shapes {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.shape {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(50px);
+  animation: float 18s ease-in-out infinite;
+}
+
+/* Light theme - warmer peachy/amber accents for contrast */
+.shape-1 {
+  width: 380px;
+  height: 380px;
+  background: radial-gradient(circle at 30% 30%, rgba(251, 191, 36, 0.35) 0%, transparent 65%);
+  top: -15%;
+  left: -10%;
+  animation-delay: 0s;
+}
+
+.shape-2 {
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle at 50% 50%, rgba(217, 119, 6, 0.25) 0%, transparent 60%);
+  top: 15%;
+  right: -5%;
+  animation-delay: -3s;
+}
+
+.shape-3 {
+  width: 280px;
+  height: 280px;
+  background: radial-gradient(circle at 40% 40%, rgba(180, 83, 9, 0.3) 0%, transparent 60%);
+  bottom: 5%;
+  left: -5%;
+  animation-delay: -6s;
+}
+
+.shape-4 {
+  width: 240px;
+  height: 240px;
+  background: radial-gradient(circle at 60% 60%, rgba(251, 191, 36, 0.3) 0%, transparent 60%);
+  bottom: -8%;
+  right: 10%;
+  animation-delay: -9s;
+}
+
+.shape-5 {
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle at 50% 50%, rgba(217, 119, 6, 0.2) 0%, transparent 55%);
+  top: 45%;
+  left: 25%;
+  animation-delay: -2s;
+}
+
+.shape-6 {
+  width: 220px;
+  height: 220px;
+  background: radial-gradient(circle at 50% 50%, rgba(251, 191, 36, 0.25) 0%, transparent 55%);
+  top: 30%;
+  right: 20%;
+  animation-delay: -5s;
+}
+
+.shape-7 {
+  width: 180px;
+  height: 180px;
+  background: radial-gradient(circle at 50% 50%, rgba(180, 83, 9, 0.25) 0%, transparent 55%);
+  bottom: 30%;
+  left: 45%;
+  animation-delay: -8s;
+}
+
+/* Dark theme */
+:root.dark .shape-1 {
+  background: radial-gradient(circle at 30% 30%, rgba(251, 191, 36, 0.2) 0%, transparent 65%);
+}
+
+:root.dark .shape-2 {
+  background: radial-gradient(circle at 50% 50%, rgba(217, 119, 6, 0.15) 0%, transparent 60%);
+}
+
+:root.dark .shape-3 {
+  background: radial-gradient(circle at 40% 40%, rgba(251, 191, 36, 0.18) 0%, transparent 60%);
+}
+
+:root.dark .shape-4 {
+  background: radial-gradient(circle at 60% 60%, rgba(180, 83, 9, 0.2) 0%, transparent 60%);
+}
+
+:root.dark .shape-5 {
+  background: radial-gradient(circle at 50% 50%, rgba(217, 119, 6, 0.12) 0%, transparent 55%);
+}
+
+:root.dark .shape-6 {
+  background: radial-gradient(circle at 50% 50%, rgba(251, 191, 36, 0.15) 0%, transparent 55%);
+}
+
+:root.dark .shape-7 {
+  background: radial-gradient(circle at 50% 50%, rgba(180, 83, 9, 0.15) 0%, transparent 55%);
+}
+
+@keyframes float {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  25% { transform: translate(15px, -20px) scale(1.02); }
+  50% { transform: translate(-10px, 15px) scale(0.98); }
+  75% { transform: translate(-20px, -10px) scale(1.01); }
 }
 
 .login-container {
@@ -147,6 +280,8 @@ const handleLogin = async () => {
   display: flex;
   flex-direction: column;
   align-items: center;
+  position: relative;
+  z-index: 1;
 }
 
 .login-card {
