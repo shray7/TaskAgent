@@ -1,0 +1,31 @@
+# Use this to run just the databases for local development
+# Usage: docker compose -f docker-compose.services.yml up -d
+
+version: '3.8'
+
+services:
+  # SQL Server
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: taskagent-sqlserver
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=TaskAgent123!
+      - MSSQL_PID=Developer
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver-data:/var/opt/mssql
+
+  # MongoDB
+  mongodb:
+    image: mongo:7
+    container_name: taskagent-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb-data:/data/db
+
+volumes:
+  sqlserver-data:
+  mongodb-data:

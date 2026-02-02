@@ -1,0 +1,48 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+Frontend/dist/
+Frontend/playwright-report/
+Frontend/test-results/
+
+# .NET
+[Dd]ebug/
+[Rr]elease/
+[Bb]in/
+[Oo]bj/
+*.user
+*.suo
+*.userosscache
+**/packages/*
+!**/packages/build/
+
+# IDE
+.vs/
+.idea/
+*.sln.docstates
+
+# Test / coverage
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+coverage/
+*.trx
+
+# Secrets - NEVER commit
+**/appsettings.*.local.json
+**/secrets.json
+.env
+.env.*
+!.env.example
+!.env.pages.example
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+*.tmp
+
+# Local uploads
+uploads/

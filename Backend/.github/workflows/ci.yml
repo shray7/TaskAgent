@@ -1,0 +1,99 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+env:
+  DOTNET_VERSION: '9.0.x'
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore dependencies
+        run: dotnet restore TaskAgent.sln
+
+      - name: Build
+        run: dotnet build TaskAgent.sln --configuration Release --no-restore
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-output
+          path: |
+            src/**/bin/Release
+          retention-days: 1
+
+  test:
+    name: Test
+    needs: build
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore
+        run: dotnet restore TaskAgent.sln
+
+      - name: Test with coverage
+        run: |
+          dotnet test TaskAgent.sln \
+            --configuration Release \
+            --verbosity normal \
+            --collect:"XPlat Code Coverage" \
+            --results-directory ./coverage \
+            --logger "trx;LogFileName=test-results.trx"
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: |
+            coverage/
+            **/test-results.trx
+          retention-days: 5
+
+      - name: Test report
+        uses: dorny/test-reporter@v1
+        if: always() && github.event_name == 'pull_request'
+        with:
+          name: Test Results
+          path: '**/test-results.trx'
+          reporter: dotnet-trx
+
+  docker-build:
+    name: Docker Build
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t taskagent:pr-${{ github.event.number }} .
+
+      - name: Verify image
+        run: |
+          docker run --rm -d --name test-container -p 8080:8080 taskagent:pr-${{ github.event.number }}
+          sleep 5
+          curl -f http://localhost:8080/health || exit 1
+          docker stop test-container

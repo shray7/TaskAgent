@@ -1,0 +1,42 @@
+# Build outputs
+**/bin/
+**/obj/
+**/out/
+
+# IDE
+.vs/
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# User-specific files
+*.user
+*.userosscache
+*.suo
+
+# Test results
+**/TestResults/
+
+# NuGet
+*.nupkg
+**/packages/
+
+# Misc
+.git/
+.gitignore
+*.md
+!README.md
+Thumbs.db
+.DS_Store
+
+# Docker
+docker-compose*.yml
+Dockerfile*
+
+# Scripts
+scripts/
+
+# Tests (not needed in production image)
+tests/
