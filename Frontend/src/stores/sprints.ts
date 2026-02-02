@@ -154,7 +154,6 @@ export const useSprintsStore = defineStore(
     }
   },
   {
-    // @ts-ignore pinia-plugin-persistedstate persist option
-    persist: { pick: ['currentSprintId'] }
+    persist: { paths: ['currentSprintId'] }
   }
 )

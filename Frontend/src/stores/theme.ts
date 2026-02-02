@@ -46,10 +46,9 @@ export const useThemeStore = defineStore(
     }
   },
   {
-    // @ts-ignore pinia-plugin-persistedstate persist option
     persist: {
-      pick: ['theme'],
-      afterHydrate(ctx: PiniaPluginContext) {
+      paths: ['theme'],
+      afterRestore(ctx: PiniaPluginContext) {
         ;(ctx.store as unknown as { applyThemeAfterRestore: () => void }).applyThemeAfterRestore()
       }
     }

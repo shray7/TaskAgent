@@ -130,7 +130,6 @@ export const useProjectsStore = defineStore(
     }
   },
   {
-    // @ts-ignore pinia-plugin-persistedstate persist option
-    persist: { pick: ['currentProjectId'] }
+    persist: { paths: ['currentProjectId'] }
   }
 )

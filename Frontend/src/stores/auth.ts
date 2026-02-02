@@ -60,7 +60,6 @@ export const useAuthStore = defineStore(
     }
   },
   {
-    // @ts-ignore pinia-plugin-persistedstate persist option
-    persist: { pick: ['user'] }
+    persist: { paths: ['user'] }
   }
 )
