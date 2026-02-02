@@ -196,7 +196,7 @@
       </div>
     </Teleport>
 
-    <TaskForm v-if="showTaskForm" :task="editingTask" @close="closeTaskForm" @submit="handleTaskSubmit" />
+    <TaskForm v-if="showTaskForm" :task="editingTask" @close="closeTaskForm" @submit="handleTaskSubmit" @delete="handleDeleteTaskFromForm" />
   </div>
 </template>
 
@@ -221,12 +221,46 @@ const {
   isProjectMember, toggleProjectMember, clearFilters,
   handleLogout, handleDeleteTask, handleStatusChange, handleInlineUpdate,
   handleDragStart, handleDragEnd, handleDragOver, handleDragLeave, handleDrop,
-  handleEditTask, handleTaskSubmit, closeTaskForm
+  handleEditTask, handleTaskSubmit, handleDeleteTaskFromForm, closeTaskForm
 } = d
 </script>
 
 <style scoped>
 @import '../dashboard-shared.css';
+
+/* Tablet header: more padding and gap so items aren't crunched */
+.dashboard-tablet .header-content {
+  padding-left: 1.75rem;
+  padding-right: 1.75rem;
+  min-height: 4rem;
+  height: auto;
+  gap: 1rem;
+}
+
+.dashboard-tablet .header-left {
+  gap: 1rem;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.dashboard-tablet .header-right {
+  gap: 1rem;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.dashboard-tablet .header-divider {
+  margin: 0 0.5rem;
+}
+
+.dashboard-tablet .view-toggle {
+  padding: 0.375rem;
+  gap: 0.125rem;
+}
+
+.dashboard-tablet .view-btn {
+  padding: 0.5rem 0.625rem;
+}
 
 .dashboard-tablet .stats-grid-tablet {
   display: grid;

@@ -1,8 +1,10 @@
 import { test, expect } from '@playwright/test'
 
-// See here how to get started:
-// https://playwright.dev/docs/intro
-test('visits the app root url', async ({ page }) => {
+test('app root redirects to login when unauthenticated', async ({ page }) => {
   await page.goto('/')
-  await expect(page.locator('h1')).toHaveText('You did it!')
+  await expect(page).toHaveURL(/\/(login|dashboard)/)
+  // Either land on login (guest) or dashboard (if already logged in)
+  const onLogin = await page.locator('text=Log in').isVisible().catch(() => false)
+  const onDashboard = await page.locator('text=Dashboard').isVisible().catch(() => false)
+  expect(onLogin || onDashboard).toBe(true)
 })

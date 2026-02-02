@@ -11,13 +11,17 @@
           </div>
           <div class="header-divider"></div>
           <nav class="header-nav">
-            <router-link to="/dashboard" class="nav-link active">
+            <router-link to="/dashboard" class="nav-link" active-class="active" exact-active-class="active">
               <LayoutDashboard class="nav-icon" />
               Dashboard
             </router-link>
-            <router-link to="/my-tasks" class="nav-link">
+            <router-link to="/my-tasks" class="nav-link" active-class="active" exact-active-class="active">
               <UserIcon class="nav-icon" />
               My Tasks
+            </router-link>
+            <router-link to="/project-settings" class="nav-link" active-class="active" exact-active-class="active">
+              <Settings class="nav-icon" />
+              Project settings
             </router-link>
           </nav>
           <div class="header-divider"></div>
@@ -364,6 +368,7 @@
       :task="editingTask"
       @close="closeTaskForm"
       @submit="handleTaskSubmit"
+      @delete="handleDeleteTaskFromForm"
     />
   </div>
 </template>
@@ -381,7 +386,7 @@ import ThemeToggle from '@/components/ui/ThemeToggle.vue'
 import ProjectSelector from '@/components/layout/ProjectSelector.vue'
 import SprintSelector from '@/components/layout/SprintSelector.vue'
 import CommentList from '@/features/dashboard/components/CommentList.vue'
-import { Plus, ListTodo, Clock, CheckCircle, Filter, Users, LogOut, CheckSquare, List, Columns3, BarChart2, ChevronUp, ChevronDown, Trash2, ArrowUp, ArrowDown, LayoutDashboard, User as UserIcon } from 'lucide-vue-next'
+import { Plus, ListTodo, Clock, CheckCircle, Filter, Users, LogOut, CheckSquare, List, Columns3, BarChart2, ChevronUp, ChevronDown, Trash2, ArrowUp, ArrowDown, LayoutDashboard, User as UserIcon, Settings } from 'lucide-vue-next'
 import AnalyticsView from '@/features/analytics/components/AnalyticsView.vue'
 import { getInitials, getUserColor } from '@/utils/initials'
 
@@ -711,6 +716,11 @@ const handleTaskSubmit = async (taskData: Record<string, unknown>) => {
 const closeTaskForm = () => {
   showTaskForm.value = false
   editingTask.value = null
+}
+
+const handleDeleteTaskFromForm = async (taskId: number) => {
+  await tasksStore.deleteTask(taskId)
+  closeTaskForm()
 }
 
 const clearFilters = () => {

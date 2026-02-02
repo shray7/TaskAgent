@@ -174,5 +174,18 @@ Set `VITE_API_BASE=http://localhost:5001` in Frontend `.env` for local API. File
 
 ## Deployment
 
-- **Backend**: Deployed to Azure Container Apps via GitHub Actions (see `.github/workflows/deploy-backend.yml`). Uses Azure AD / RBAC for passwordless SQL access.
-- **Frontend**: Deployed to GitHub Pages via `.github/workflows/deploy-pages.yml`. See [DEPLOY-TO-GITHUB-PAGES.md](DEPLOY-TO-GITHUB-PAGES.md) for setup.
+### Backend
+
+Deployed to Azure Container Apps via `.github/workflows/deploy-backend.yml`. Uses Azure AD / RBAC for passwordless SQL access.
+
+### Frontend (GitHub Pages)
+
+Deployed via `.github/workflows/deploy-pages.yml`.
+
+1. **Log in to GitHub** (one-time): `gh auth login -h github.com -p https -w`
+2. **Create repo and push**: `gh repo create TaskAgent --public --source=. --push --description "TaskAgent - Vue.js task management with .NET backend"`
+3. **Enable Pages**: Repo → **Settings** → **Pages** → **Source**: **GitHub Actions**
+4. **API URL** (optional): Settings → Secrets and variables → Actions → Variables → `VITE_API_BASE` = your backend URL (e.g. `https://taskagent-api-staging....azurecontainerapps.io`)
+5. **CORS**: Add your Pages URL to backend (e.g. Container App env `Cors__AllowedOrigins` = `https://YOUR_USERNAME.github.io`)
+
+Workflow runs on push to `main`. App will be at **https://YOUR_USERNAME.github.io/TaskAgent/**.

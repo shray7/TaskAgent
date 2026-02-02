@@ -311,6 +311,11 @@ export function useDashboard() {
     editingTask.value = null
   }
 
+  async function handleDeleteTaskFromForm(taskId: number) {
+    await tasksStore.deleteTask(taskId)
+    closeTaskForm()
+  }
+
   async function init() {
     if (!authStore.isAuthenticated) {
       router.push('/login')
@@ -387,6 +392,7 @@ export function useDashboard() {
     handleDrop,
     handleEditTask,
     handleTaskSubmit,
+    handleDeleteTaskFromForm,
     closeTaskForm,
     getInitials,
     getUserColor

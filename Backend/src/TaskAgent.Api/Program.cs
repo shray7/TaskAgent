@@ -14,7 +14,7 @@ builder.Services.AddSwaggerGen(options =>
     {
         Title = "TaskAgent API",
         Version = "v1",
-        Description = "Backend API for TaskAgent - manages jobs and companies for subcontractor scheduling"
+        Description = "Backend API for TaskAgent - task management (projects, sprints, tasks, comments)"
     });
 });
 builder.Services.AddControllers();
@@ -24,6 +24,13 @@ builder.Services.AddSingleton<IPasswordHasher, PasswordHasher>();
 
 // Add data access layer (EF Core InMemory)
 builder.Services.AddDataAccess(builder.Configuration);
+
+// Task management services
+builder.Services.AddScoped<ICommentsService, CommentsService>();
+builder.Services.AddScoped<IProjectsService, ProjectsService>();
+builder.Services.AddScoped<ISprintsService, SprintsService>();
+builder.Services.AddScoped<ITasksService, TasksService>();
+builder.Services.AddScoped<IUsersService, UsersService>();
 
 // CORS: localhost (dev) + Cors:AllowedOrigins (e.g. GitHub Pages)
 builder.Services.AddCors(options =>

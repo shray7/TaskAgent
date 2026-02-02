@@ -13,8 +13,6 @@ public class AppDbContext : DbContext
     }
 
     public DbSet<User> Users => Set<User>();
-    public DbSet<Job> Jobs => Set<Job>();
-    public DbSet<Company> Companies => Set<Company>();
 
     // Task Management (Vue app)
     public DbSet<AppUser> AppUsers => Set<AppUser>();
@@ -34,42 +32,6 @@ public class AppDbContext : DbContext
             entity.Property(e => e.Email).HasMaxLength(256).IsRequired();
             entity.Property(e => e.DisplayName).HasMaxLength(128).IsRequired();
             entity.Property(e => e.PasswordHash).IsRequired();
-        });
-
-        modelBuilder.Entity<Job>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.Id).HasMaxLength(20).IsRequired();
-            entity.Property(e => e.Title).HasMaxLength(256).IsRequired();
-            entity.Property(e => e.Description).HasMaxLength(1000);
-            entity.Property(e => e.Company).HasMaxLength(256).IsRequired();
-            entity.Property(e => e.Location).HasMaxLength(128);
-            entity.Property(e => e.Address).HasMaxLength(512);
-            
-            // Indexes for common queries
-            entity.HasIndex(e => e.Company);
-            entity.HasIndex(e => e.Location);
-            entity.HasIndex(e => e.ScheduleDate);
-        });
-
-        modelBuilder.Entity<Company>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.Id).HasMaxLength(20).IsRequired();
-            entity.Property(e => e.Name).HasMaxLength(256).IsRequired();
-            entity.Property(e => e.Industry).HasMaxLength(100);
-            entity.Property(e => e.ContactEmail).HasMaxLength(256);
-            entity.Property(e => e.ContactPhone).HasMaxLength(50);
-            entity.Property(e => e.Website).HasMaxLength(512);
-            entity.Property(e => e.City).HasMaxLength(128);
-            entity.Property(e => e.State).HasMaxLength(50);
-            entity.Property(e => e.LicenseNumber).HasMaxLength(100);
-            entity.Property(e => e.Rating).HasPrecision(3, 2);
-
-            // Indexes for common queries
-            entity.HasIndex(e => e.Name).IsUnique();
-            entity.HasIndex(e => e.IsAllowed);
-            entity.HasIndex(e => e.Industry);
         });
 
         // Task Management entities

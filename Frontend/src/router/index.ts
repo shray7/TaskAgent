@@ -2,6 +2,8 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import DashboardView from '@/features/dashboard/views/DashboardView.vue'
 import MyTasksView from '@/features/tasks/views/MyTasksView.vue'
+import ProjectSettingsView from '@/features/dashboard/views/ProjectSettingsView.vue'
+import ProfileView from '@/features/auth/views/ProfileView.vue'
 import LoginView from '@/features/auth/views/LoginView.vue'
 import SignUpView from '@/features/auth/views/SignUpView.vue'
 
@@ -31,9 +33,21 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
+      path: '/project-settings',
+      name: 'project-settings',
+      component: ProjectSettingsView,
+      meta: { requiresAuth: true }
+    },
+    {
       path: '/my-tasks',
       name: 'my-tasks',
       component: MyTasksView,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/profile',
+      name: 'profile',
+      component: ProfileView,
       meta: { requiresAuth: true }
     }
   ],

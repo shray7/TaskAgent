@@ -1,20 +1,19 @@
 <template>
   <div class="dashboard dashboard-mobile">
-    <header class="header">
+    <header class="header mobile-header">
       <div class="header-content">
-        <HamburgerNav :show-project-sprint="true" />
-        <button class="btn btn-primary btn-sm new-task-btn" @click="showTaskForm = true">
-          <Plus class="btn-icon" />
-          New
-        </button>
-        <ThemeToggle class="header-theme-toggle" />
-        <div class="user-avatar-sm" :style="authStore.user ? { backgroundColor: getUserColor(authStore.user.id), color: '#fff' } : {}">
-          {{ authStore.user ? getInitials(authStore.user) : '' }}
+        <div class="header-selectors">
+          <ProjectSelector />
+          <SprintSelector />
         </div>
       </div>
     </header>
 
-    <main class="main-content">
+    <button class="fab-new-task" aria-label="New task" @click="showTaskForm = true">
+      <Plus class="fab-icon" />
+      <span class="fab-label">New</span>
+    </button>
+    <main class="main-content main-with-bottom-nav">
       <div class="view-tabs">
         <button :class="['tab', { active: viewMode === 'list' }]" @click="viewMode = 'list'">List</button>
         <button :class="['tab', { active: viewMode === 'columns' }]" @click="viewMode = 'columns'">Board</button>
@@ -23,8 +22,11 @@
 
       <div class="stats-row">
         <div v-for="col in visibleColumnConfigs" :key="col.status" class="stat-mini">
-          <span class="stat-value">{{ col.tasks.length }}</span>
-          <span class="stat-label">{{ col.label }}</span>
+          <component :is="col.icon" class="stat-mini-icon" />
+          <div class="stat-mini-text">
+            <span class="stat-value">{{ col.tasks.length }}</span>
+            <span class="stat-label">{{ col.label }}</span>
+          </div>
         </div>
       </div>
 
@@ -75,10 +77,14 @@
             :class="{ 'drag-over': dragOverColumn === col.status }"
           >
             <div class="column-header">
+              <component :is="col.icon" class="column-header-icon" />
               <span :class="['status-dot', col.dotClass]"></span>
               {{ col.label }} ({{ col.tasks.length }})
             </div>
-            <div v-if="col.tasks.length === 0" class="empty-state">Drop here</div>
+            <div v-if="col.tasks.length === 0" class="empty-state">
+              <component :is="col.icon" class="empty-icon" />
+              Drop here
+            </div>
             <div v-else class="task-list">
               <TaskCard
                 v-for="task in col.tasks"
@@ -135,7 +141,8 @@
       </section>
     </main>
 
-    <TaskForm v-if="showTaskForm" :task="editingTask" @close="closeTaskForm" @submit="handleTaskSubmit" />
+    <TaskForm v-if="showTaskForm" :task="editingTask" @close="closeTaskForm" @submit="handleTaskSubmit" @delete="handleDeleteTaskFromForm" />
+    <MobileBottomNav />
   </div>
 </template>
 
@@ -143,8 +150,9 @@
 import { ref, watch } from 'vue'
 import { Plus, Users } from 'lucide-vue-next'
 import { useDashboard } from '../../composables/useDashboard'
-import HamburgerNav from '@/components/layout/HamburgerNav.vue'
-import ThemeToggle from '@/components/ui/ThemeToggle.vue'
+import ProjectSelector from '@/components/layout/ProjectSelector.vue'
+import SprintSelector from '@/components/layout/SprintSelector.vue'
+import MobileBottomNav from '@/components/layout/MobileBottomNav.vue'
 import TaskCard from '../../components/TaskCard.vue'
 import TaskForm from '../../components/TaskForm.vue'
 import AnalyticsMobile from '@/features/analytics/components/AnalyticsMobile.vue'
@@ -158,7 +166,7 @@ const {
   projectTeamMembers, statusLabel, formatDueDate, getUserTaskCount, getInitials, getUserColor,
   handleDeleteTask, handleStatusChange, handleInlineUpdate,
   handleDragStart, handleDragEnd, handleDragOver, handleDragLeave, handleDrop,
-  handleEditTask, handleTaskSubmit, closeTaskForm
+  handleEditTask, handleTaskSubmit, handleDeleteTaskFromForm, closeTaskForm
 } = d
 
 const swipeTrackRef = ref<HTMLElement | null>(null)
@@ -186,27 +194,105 @@ watch(swipeTrackRef, (el) => {
 <style scoped>
 @import '../dashboard-shared.css';
 
-.dashboard-mobile .header-content {
-  padding: 0 1rem;
-  height: 3.5rem;
+.dashboard-mobile .mobile-header .header {
+  position: sticky;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 40;
+  background-color: var(--header-bg);
+  border-bottom: 1px solid var(--header-border);
 }
 
-.dashboard-mobile .header-content {
+.dashboard-mobile .mobile-header .header-content {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 1rem;
+  min-height: 3rem;
+  max-width: none;
+}
+
+.dashboard-mobile .header-selectors {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  min-width: 0;
+  flex: 1;
+  width: 100%;
 }
 
-.dashboard-mobile .new-task-btn { margin-left: auto; }
-.dashboard-mobile .user-avatar-sm {
-  width: 2rem;
-  height: 2rem;
-  font-size: 0.75rem;
-  font-weight: 600;
-  display: flex;
+.dashboard-mobile .header-selectors :deep(.project-selector),
+.dashboard-mobile .header-selectors :deep(.sprint-selector) {
+  min-width: 0;
+  flex: 1 1 0;
+}
+
+.dashboard-mobile .header-selectors :deep(.project-button),
+.dashboard-mobile .header-selectors :deep(.sprint-button) {
+  min-width: 0;
+  min-height: 2.5rem;
+  padding: 0.5rem 0.625rem;
+  font-size: 0.8125rem;
+  width: 100%;
+  max-width: 100%;
+}
+
+.dashboard-mobile .header-selectors :deep(.project-name),
+.dashboard-mobile .header-selectors :deep(.sprint-name) {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dashboard-mobile .header-selectors :deep(.sprint-button-content) {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.dashboard-mobile .main-with-bottom-nav {
+  padding-bottom: calc(3.5rem + env(safe-area-inset-bottom, 0px) + 4rem);
+}
+
+.fab-new-task {
+  position: fixed;
+  bottom: calc(3.5rem + env(safe-area-inset-bottom, 0px) + 0.5rem);
+  right: 1rem;
+  z-index: 35;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 0.5rem;
+  gap: 0.375rem;
+  padding: 0.625rem 1rem;
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
+  border: none;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  box-shadow: var(--shadow-lg);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.fab-new-task:hover {
+  transform: scale(1.05);
+  box-shadow: var(--shadow-xl);
+}
+
+.fab-new-task:active {
+  transform: scale(0.98);
+}
+
+.fab-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.fab-label {
+  white-space: nowrap;
 }
 
 .dashboard-mobile .main-content { padding: 1rem; }
@@ -239,9 +325,10 @@ watch(swipeTrackRef, (el) => {
 
 .stats-row {
   display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
   gap: 0.75rem;
   margin-bottom: 1rem;
-  overflow-x: auto;
   padding-bottom: 0.25rem;
 }
 
@@ -251,11 +338,27 @@ watch(swipeTrackRef, (el) => {
   background: var(--card-bg);
   border: 1px solid var(--card-border);
   border-radius: 0.5rem;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
-.stat-mini .stat-value { display: block; font-size: 1.125rem; font-weight: 700; }
-.stat-mini .stat-label { font-size: 0.6875rem; color: var(--text-muted); }
+.stat-mini .stat-mini-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.stat-mini .stat-mini-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.125rem;
+}
+
+.stat-mini .stat-value { font-size: 1.125rem; font-weight: 700; line-height: 1; }
+.stat-mini .stat-label { font-size: 0.6875rem; color: var(--text-muted); line-height: 1; }
 
 .filters-mobile {
   display: flex;
@@ -324,6 +427,31 @@ watch(swipeTrackRef, (el) => {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+}
+
+.swipe-column .column-header-icon {
+  width: 1.125rem;
+  height: 1.125rem;
+  flex-shrink: 0;
+  color: var(--text-secondary);
+}
+
+.swipe-column .empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 2rem;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.swipe-column .empty-state .empty-icon {
+  width: 2rem;
+  height: 2rem;
+  color: var(--text-muted);
+  opacity: 0.7;
 }
 
 .swipe-dots {

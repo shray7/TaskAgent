@@ -2,7 +2,6 @@
   <div class="my-tasks-view my-tasks-mobile">
     <header class="header">
       <div class="header-content">
-        <HamburgerNav :show-project-sprint="false" />
         <span class="page-title">My Tasks</span>
         <div class="user-avatar-sm" :style="authStore.user ? { backgroundColor: getUserColor(authStore.user.id), color: '#fff' } : {}">
           {{ authStore.user ? getInitials(authStore.user) : '' }}
@@ -10,7 +9,7 @@
       </div>
     </header>
 
-    <main class="main-content">
+    <main class="main-content main-with-bottom-nav">
       <div class="filters-mobile">
         <select v-model="selectedProjectId" class="select">
           <option :value="null">All Projects</option>
@@ -59,6 +58,7 @@
       </div>
     </main>
 
+    <MobileBottomNav />
     <TaskForm
       v-if="showTaskForm"
       :task="selectedTask"
@@ -75,7 +75,7 @@
 <script setup lang="ts">
 import { Inbox } from 'lucide-vue-next'
 import { useMyTasks } from '../../composables/useMyTasks'
-import HamburgerNav from '@/components/layout/HamburgerNav.vue'
+import MobileBottomNav from '@/components/layout/MobileBottomNav.vue'
 import TaskForm from '@/features/dashboard/components/TaskForm.vue'
 
 const t = useMyTasks()
@@ -92,17 +92,22 @@ const {
 @import '../my-tasks-shared.css';
 
 .my-tasks-mobile .header-content {
-  padding: 0 1rem;
-  height: 3.5rem;
-}
-
-.my-tasks-mobile .header-content {
+  padding: 0.75rem 1rem;
+  min-height: 3.5rem;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.75rem;
 }
 
-.my-tasks-mobile .page-title { flex: 1; font-size: 1rem; }
+.my-tasks-mobile .page-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .my-tasks-mobile .user-avatar-sm {
   width: 2rem;
   height: 2rem;
@@ -115,6 +120,9 @@ const {
 }
 
 .my-tasks-mobile .main-content { padding: 1rem; }
+.my-tasks-mobile .main-with-bottom-nav {
+  padding-bottom: calc(3.5rem + env(safe-area-inset-bottom, 0px) + 1rem);
+}
 
 .my-tasks-mobile .filters-mobile {
   display: flex;

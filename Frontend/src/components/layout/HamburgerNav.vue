@@ -39,6 +39,10 @@
                 <User class="nav-icon" />
                 My Tasks
               </router-link>
+              <router-link to="/project-settings" class="nav-link" @click="open = false">
+                <Settings class="nav-icon" />
+                Project settings
+              </router-link>
             </nav>
 
             <div class="drawer-footer">
@@ -69,7 +73,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { Menu, X, CheckSquare, LayoutDashboard, User, LogOut } from 'lucide-vue-next'
+import { Menu, X, CheckSquare, LayoutDashboard, User, LogOut, Settings } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth'
 import ThemeToggle from '@/components/ui/ThemeToggle.vue'
 import ProjectSelector from '@/components/layout/ProjectSelector.vue'

@@ -140,13 +140,24 @@
         </div>
 
         <div class="modal-footer">
-          <button type="button" @click="$emit('close')" class="btn btn-secondary">
-            Cancel
+          <button
+            v-if="isEditing && props.task?.id"
+            type="button"
+            @click="handleDelete"
+            class="btn btn-danger"
+            :disabled="loading"
+          >
+            Delete Task
           </button>
-          <button type="submit" :disabled="loading" class="btn btn-primary">
-            <span v-if="loading" class="loading-spinner"></span>
-            {{ loading ? 'Saving...' : (isEditing ? 'Update Task' : 'Create Task') }}
-          </button>
+          <div class="modal-footer-actions">
+            <button type="button" @click="$emit('close')" class="btn btn-secondary">
+              Cancel
+            </button>
+            <button type="submit" :disabled="loading" class="btn btn-primary">
+              <span v-if="loading" class="loading-spinner"></span>
+              {{ loading ? 'Saving...' : (isEditing ? 'Update Task' : 'Create Task') }}
+            </button>
+          </div>
         </div>
       </form>
     </div>
@@ -183,6 +194,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   close: []
   submit: [taskData: any]
+  delete: [taskId: number]
 }>()
 
 const authStore = useAuthStore()
@@ -289,6 +301,12 @@ const handleSubmit = async () => {
     loading.value = false
   }
 }
+
+function handleDelete() {
+  if (!props.task?.id) return
+  if (!confirm('Are you sure you want to delete this task? This cannot be undone.')) return
+  emit('delete', props.task.id)
+}
 </script>
 
 <style scoped>
@@ -301,13 +319,16 @@ const handleSubmit = async () => {
   justify-content: center;
   padding: 1rem;
   z-index: 50;
+  overflow-y: auto;
 }
 
 .modal {
   max-width: 32rem;
   width: 100%;
-  max-height: 90vh;
+  height: max-content;
+  max-height: calc(100vh - 2rem);
   overflow-y: auto;
+  margin: auto;
 }
 
 .modal-header {
@@ -416,10 +437,29 @@ const handleSubmit = async () => {
 
 .modal-footer {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
   gap: 0.75rem;
   padding-top: 1.5rem;
   border-top: 1px solid var(--border-primary);
+  flex-wrap: wrap;
+}
+
+.modal-footer-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-left: auto;
+}
+
+.btn-danger {
+  background-color: var(--badge-red-bg, #fef2f2);
+  color: var(--badge-red-text, #b91c1c);
+  border: 1px solid var(--badge-red-text, #b91c1c);
+}
+
+.btn-danger:hover:not(:disabled) {
+  background-color: var(--badge-red-text, #b91c1c);
+  color: white;
 }
 
 .loading-spinner {
