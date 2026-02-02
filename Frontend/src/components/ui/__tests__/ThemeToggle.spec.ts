@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import ThemeToggle from '../ThemeToggle.vue'
+
 import { useThemeStore } from '@/stores/theme'
 
 // Mock lucide-vue-next icons

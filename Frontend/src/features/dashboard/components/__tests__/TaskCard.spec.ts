@@ -3,6 +3,7 @@ import type { Ref } from 'vue'
 import { mount, flushPromises } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import TaskCard from '../TaskCard.vue'
+
 import { useAuthStore } from '@/stores/auth'
 
 // Mock lucide-vue-next icons

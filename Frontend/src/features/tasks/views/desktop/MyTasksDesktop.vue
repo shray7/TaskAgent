@@ -200,8 +200,8 @@ import { useTasksStore } from '@/stores/tasks'
 import { useProjectsStore } from '@/stores/projects'
 import { useSprintsStore } from '@/stores/sprints'
 import { getInitials, getUserColor } from '@/utils/initials'
-import ThemeToggle from '@/components/ThemeToggle.vue'
-import TaskForm from '@/components/TaskForm.vue'
+import ThemeToggle from '@/components/ui/ThemeToggle.vue'
+import TaskForm from '@/features/dashboard/components/TaskForm.vue'
 import type { Task, TaskStatus, TaskPriority } from '@/types'
 
 const router = useRouter()

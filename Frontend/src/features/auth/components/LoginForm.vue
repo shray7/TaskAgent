@@ -91,7 +91,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import ThemeToggle from '@/components/ThemeToggle.vue'
+import ThemeToggle from '@/components/ui/ThemeToggle.vue'
 import { CheckSquare, AlertCircle, ArrowRight } from 'lucide-vue-next'
 import { getInitials, getUserColor } from '@/utils/initials'
 

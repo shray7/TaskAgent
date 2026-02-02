@@ -98,7 +98,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import ThemeToggle from '@/components/ThemeToggle.vue'
+import ThemeToggle from '@/components/ui/ThemeToggle.vue'
 import { CheckSquare, AlertCircle } from 'lucide-vue-next'
 
 const router = useRouter()

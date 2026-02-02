@@ -1,5 +1,5 @@
 <template>
-  <div class="analytics-view animate-fade-in">
+  <div :class="['analytics-view', `analytics-${layout}`]">
     <div class="analytics-grid">
       <!-- Sprint Row: Progress, Burndown Chart, Completion Funnel -->
       <div class="sprint-row">
@@ -332,17 +332,21 @@ import { ref, computed, watch } from 'vue'
 import { getInitials, getUserColor } from '@/utils/initials'
 import type { Task, Sprint } from '@/types'
 
-const props = defineProps<{
-  todoTasks: Task[]
-  inProgressTasks: Task[]
-  completedTasks: Task[]
-  allFilteredTasks: Task[]
-  allProjectTasks: Task[]
-  sprints: Sprint[]
-  users: { id: number; name: string; avatar: string }[]
-  taskSizeUnit: string
-  sprintProgress: { daysElapsed: number; daysRemaining: number; percentComplete: number } | null
-}>()
+const props = withDefaults(
+  defineProps<{
+    todoTasks: Task[]
+    inProgressTasks: Task[]
+    completedTasks: Task[]
+    allFilteredTasks: Task[]
+    allProjectTasks: Task[]
+    sprints: Sprint[]
+    users: { id: number; name: string; avatar: string }[]
+    taskSizeUnit: string
+    sprintProgress: { daysElapsed: number; daysRemaining: number; percentComplete: number } | null
+    layout?: 'desktop' | 'tablet' | 'mobile'
+  }>(),
+  { layout: 'desktop' }
+)
 
 defineEmits<{
   'edit-task': [task: Task]
@@ -703,6 +707,34 @@ function formatDueDate(d: Date | string | undefined): string {
   .sprint-row > :last-child {
     grid-column: auto;
   }
+}
+
+/* Tablet variant: 2-col sprint row */
+.analytics-tablet .analytics-grid {
+  grid-template-columns: 1fr;
+}
+.analytics-tablet .sprint-row {
+  grid-template-columns: 1fr 1fr;
+}
+.analytics-tablet .sprint-row > :last-child {
+  grid-column: 1 / -1;
+}
+
+/* Mobile variant: single column */
+.analytics-mobile .analytics-grid {
+  grid-template-columns: 1fr;
+}
+.analytics-mobile .sprint-row {
+  grid-template-columns: 1fr;
+}
+.analytics-mobile .sprint-row > :last-child {
+  grid-column: auto;
+}
+.analytics-mobile .analytics-card {
+  padding: 1rem;
+}
+.analytics-mobile .analytics-title {
+  font-size: 0.875rem;
 }
 
 .analytics-card {

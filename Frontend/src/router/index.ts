@@ -1,9 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import DashboardView from '@/views/DashboardView.vue'
-import MyTasksView from '@/views/MyTasksView.vue'
-import LoginForm from '@/components/LoginForm.vue'
-import SignUpForm from '@/components/SignUpForm.vue'
+import DashboardView from '@/features/dashboard/views/DashboardView.vue'
+import MyTasksView from '@/features/tasks/views/MyTasksView.vue'
+import LoginView from '@/features/auth/views/LoginView.vue'
+import SignUpView from '@/features/auth/views/SignUpView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -15,13 +15,13 @@ const router = createRouter({
     {
       path: '/login',
       name: 'login',
-      component: LoginForm,
+      component: LoginView,
       meta: { requiresGuest: true }
     },
     {
       path: '/signup',
       name: 'signup',
-      component: SignUpForm,
+      component: SignUpView,
       meta: { requiresGuest: true }
     },
     {

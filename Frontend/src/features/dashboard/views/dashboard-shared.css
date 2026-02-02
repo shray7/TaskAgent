@@ -1,0 +1,274 @@
+/* Shared dashboard styles for desktop, tablet, mobile */
+.dashboard {
+  min-height: 100vh;
+  background-color: var(--bg-secondary);
+}
+
+.dashboard .header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background-color: var(--header-bg);
+  border-bottom: 1px solid var(--header-border);
+}
+
+.dashboard .header-content {
+  max-width: 84rem;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 4rem;
+}
+
+.dashboard .header-left,
+.dashboard .header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.dashboard .header-divider {
+  width: 1px;
+  height: 1.5rem;
+  background-color: rgba(255, 255, 255, 0.2);
+  margin: 0 0.25rem;
+}
+
+.dashboard .view-toggle {
+  display: flex;
+  align-items: center;
+  background-color: var(--bg-tertiary);
+  border: 1px solid var(--border-primary);
+  border-radius: 0.5rem;
+  padding: 0.25rem;
+}
+
+.dashboard .view-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  background: transparent;
+  border: none;
+  border-radius: 0.375rem;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.dashboard .view-btn.active {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.dashboard .view-icon {
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+.dashboard .user-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0.75rem 0.375rem 0.375rem;
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 9999px;
+}
+
+.dashboard .user-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+  height: 2rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background-color: var(--bg-tertiary);
+  color: var(--text-secondary);
+  border-radius: 0.375rem;
+}
+
+.dashboard .user-name {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--header-text);
+}
+
+.dashboard .header-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 9999px;
+  color: var(--header-text);
+  cursor: pointer;
+}
+
+.dashboard .main-content {
+  max-width: 84rem;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+.dashboard .stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.dashboard .stat-card .stat-content {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.dashboard .stat-card .stat-info .stat-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.dashboard .stat-card .stat-info .stat-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.dashboard .inline-filters .filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.dashboard .filter-row-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dashboard .filter-row-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.dashboard .content-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.dashboard .task-columns.view-columns {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+
+.dashboard .task-section {
+  background-color: var(--bg-tertiary);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  min-height: 300px;
+}
+
+.dashboard .task-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border-primary);
+}
+
+.dashboard .task-section-title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dashboard .task-count {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  background-color: var(--bg-tertiary);
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+}
+
+.dashboard .status-dot-blue { background-color: var(--status-blue); }
+.dashboard .status-dot-amber { background-color: var(--status-amber); }
+.dashboard .status-dot-green { background-color: var(--status-green); }
+.dashboard .status-dot { width: 0.5rem; height: 0.5rem; border-radius: 50%; }
+
+.dashboard .empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  color: var(--text-muted);
+  background-color: var(--bg-tertiary);
+  border-radius: 0.75rem;
+  border: 1px dashed var(--border-primary);
+}
+
+.dashboard .task-list { display: flex; flex-direction: column; gap: 0.75rem; }
+
+.dashboard .task-table-container { overflow-x: auto; padding: 0; }
+.dashboard .task-table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
+.dashboard .task-table th {
+  text-align: left;
+  padding: 0.75rem 1rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background-color: var(--bg-tertiary);
+  border-bottom: 1px solid var(--border-primary);
+}
+.dashboard .task-table td { padding: 0.625rem 1rem; border-bottom: 1px solid var(--border-primary); }
+.dashboard .task-row { cursor: pointer; }
+.dashboard .task-row:hover { background-color: var(--bg-hover); }
+.dashboard .td-title { font-weight: 500; max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dashboard .td-date { color: var(--text-tertiary); }
+.dashboard .empty-table { text-align: center; padding: 2rem; color: var(--text-muted); }
+.dashboard .status-badge, .dashboard .priority-badge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+}
+.dashboard .status-todo { background-color: var(--status-blue-bg, rgba(59,130,246,0.1)); color: var(--status-blue); }
+.dashboard .status-in-progress { background-color: var(--status-amber-bg, rgba(245,158,11,0.1)); color: var(--status-amber); }
+.dashboard .status-completed { background-color: var(--status-green-bg, rgba(34,197,94,0.1)); color: var(--status-green); }
+.dashboard .priority-high { background-color: rgba(239,68,68,0.1); color: #ef4444; }
+.dashboard .priority-medium { background-color: rgba(245,158,11,0.1); color: #f59e0b; }
+.dashboard .priority-low { background-color: rgba(107,114,128,0.1); color: #6b7280; }
+
+.dashboard .dashboard-team-section { margin-top: 2rem; padding: 1.25rem; }
+.dashboard .dashboard-team-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+.dashboard .dashboard-team-title { display: flex; align-items: center; gap: 0.5rem; font-size: 0.9375rem; font-weight: 600; margin: 0; }
+.dashboard .dashboard-team-list { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+.dashboard .dashboard-team-member { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.75rem; background-color: var(--bg-tertiary); border-radius: 0.5rem; }
+.dashboard .team-member-avatar { min-width: 1.75rem; height: 1.75rem; font-size: 0.625rem; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; border-radius: 0.25rem; }
+.dashboard .team-member-name { font-size: 0.875rem; color: var(--text-primary); }
+.dashboard .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 1rem; }
+.dashboard .add-member-modal { max-width: 24rem; padding: 1.5rem; }
+.dashboard .add-member-options { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem; }
+.dashboard .add-member-option { display: flex; align-items: center; gap: 0.75rem; cursor: pointer; padding: 0.5rem; border-radius: 0.5rem; }
+.dashboard .add-member-option:hover { background-color: var(--bg-hover); }
+.dashboard .filter-divider { width: 1px; height: 1.5rem; background: var(--border-primary); }
+
+.dashboard .task-section.drag-over { background-color: var(--bg-hover); outline: 2px dashed var(--color-brown-400); }
+.dashboard .btn-icon-sm { width: 0.875rem; height: 0.875rem; }
+
+.select-sm { padding: 0.5rem 0.75rem; font-size: 0.8125rem; }
+.btn-sm { padding: 0.5rem 1rem; font-size: 0.8125rem; }
