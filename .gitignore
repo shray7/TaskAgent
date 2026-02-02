@@ -33,6 +33,7 @@ coverage/
 **/secrets.json
 .env
 .env.*
+.github-secrets.env
 !.env.example
 !.env.pages.example
 
