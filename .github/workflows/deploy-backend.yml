@@ -94,6 +94,9 @@ jobs:
           dotnet tool install --global dotnet-ef
           echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
 
+      - name: Restore
+        run: dotnet restore TaskAgent.sln
+
       - name: Run migrations (staging)
         env:
           ConnectionStrings__SqlDb: ${{ secrets.STAGING_SQL_CONNECTION_STRING }}
@@ -145,6 +148,9 @@ jobs:
         run: |
           dotnet tool install --global dotnet-ef
           echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
+
+      - name: Restore
+        run: dotnet restore TaskAgent.sln
 
       - name: Run migrations (production)
         env:
