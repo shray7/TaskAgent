@@ -24,6 +24,7 @@ gh repo create TaskAgent --public --source=. --push --description "TaskAgent - V
 1. Go to your repo on GitHub: `https://github.com/YOUR_USERNAME/TaskAgent`
 2. **Settings** → **Pages**
 3. Under **Build and deployment** → **Source**, select **GitHub Actions**
+4. If you see "GitHub Actions" grayed out, the first workflow run may need to complete successfully to unlock it
 
 ## 4. Add API URL (optional)
 
@@ -37,6 +38,8 @@ Repo → **Settings** → **Secrets and variables** → **Actions** → **Variab
 The workflow runs on push to `main`. If you just pushed in step 2, it should already be running. Check **Actions** in your repo. After it completes, your app will be live at:
 
 **https://YOUR_USERNAME.github.io/TaskAgent/**
+
+If you get 404, ensure **Settings → Pages → Source** is set to **GitHub Actions** (not "Deploy from a branch").
 
 ## 6. Enable CORS on the backend
 

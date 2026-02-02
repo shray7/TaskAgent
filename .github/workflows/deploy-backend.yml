@@ -1,0 +1,191 @@
+# Deploy .NET backend to Azure Container Apps
+name: Deploy Backend to Azure
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'Backend/**'
+      - '.github/workflows/deploy-backend.yml'
+  workflow_dispatch:
+
+env:
+  AZURE_RESOURCE_GROUP: rg-taskagent
+  CONTAINER_APP_NAME: taskagent-api
+  CONTAINER_APP_ENV: taskagent-env
+  ACR_NAME: taskagentflowacr
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Backend
+    outputs:
+      image-tag: ${{ steps.meta.outputs.tags }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Restore
+        run: dotnet restore TaskAgent.sln
+
+      - name: Build
+        run: dotnet build TaskAgent.sln -c Release --no-restore
+
+      - name: Test
+        run: dotnet test TaskAgent.sln -c Release --no-build --verbosity normal
+
+      - name: Set image metadata
+        id: meta
+        run: echo "tags=${{ env.ACR_NAME }}.azurecr.io/taskagent:${{ github.sha }}" >> $GITHUB_OUTPUT
+
+  build-and-push-image:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Login to ACR
+        run: az acr login --name ${{ env.ACR_NAME }}
+
+      - name: Build and push image
+        run: |
+          cd Backend
+          docker build -t ${{ env.ACR_NAME }}.azurecr.io/taskagent:${{ github.sha }} .
+          docker build -t ${{ env.ACR_NAME }}.azurecr.io/taskagent:latest .
+          docker push ${{ env.ACR_NAME }}.azurecr.io/taskagent:${{ github.sha }}
+          docker push ${{ env.ACR_NAME }}.azurecr.io/taskagent:latest
+
+  migrate-database:
+    needs: build-and-push-image
+    runs-on: ubuntu-latest
+    environment: staging
+    defaults:
+      run:
+        working-directory: Backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Install EF Core tools
+        run: |
+          dotnet tool install --global dotnet-ef
+          echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
+
+      - name: Run migrations (staging)
+        env:
+          ConnectionStrings__SqlDb: ${{ secrets.STAGING_SQL_CONNECTION_STRING }}
+        run: |
+          dotnet ef database update \
+            --project src/TaskAgent.DataAccess \
+            --startup-project src/TaskAgent.Api
+
+  deploy-staging:
+    needs: migrate-database
+    runs-on: ubuntu-latest
+    environment: staging
+
+    steps:
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy to staging
+        run: |
+          az containerapp update \
+            --name ${{ env.CONTAINER_APP_NAME }}-staging \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --image ${{ env.ACR_NAME }}.azurecr.io/taskagent:${{ github.sha }}
+
+  migrate-production:
+    needs: deploy-staging
+    runs-on: ubuntu-latest
+    environment: production
+    defaults:
+      run:
+        working-directory: Backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Install EF Core tools
+        run: |
+          dotnet tool install --global dotnet-ef
+          echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
+
+      - name: Run migrations (production)
+        env:
+          ConnectionStrings__SqlDb: ${{ secrets.PRODUCTION_SQL_CONNECTION_STRING }}
+        run: |
+          dotnet ef database update \
+            --project src/TaskAgent.DataAccess \
+            --startup-project src/TaskAgent.Api
+
+  deploy-production:
+    needs: migrate-production
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy to production
+        run: |
+          az containerapp update \
+            --name ${{ env.CONTAINER_APP_NAME }} \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --image ${{ env.ACR_NAME }}.azurecr.io/taskagent:${{ github.sha }}
+
+      - name: Verify deployment
+        run: |
+          FQDN=$(az containerapp show \
+            --name ${{ env.CONTAINER_APP_NAME }} \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --query "properties.configuration.ingress.fqdn" -o tsv)
+          echo "Deployed to: https://$FQDN"
+          for i in 1 2 3 4 5 6 7 8 9 10; do
+            if curl -sf "https://$FQDN/health/ready" > /dev/null 2>&1; then
+              echo "Health check passed"
+              exit 0
+            fi
+            echo "Waiting... ($i/10)"
+            sleep 10
+          done
+          echo "Health check failed"
+          exit 1
