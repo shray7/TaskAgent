@@ -25,20 +25,21 @@
             </div>
 
             <nav class="drawer-nav">
-              <router-link to="/dashboard" class="nav-link" @click="open = false">
-                <LayoutDashboard class="nav-icon" />
-                Dashboard
-              </router-link>
+              <div class="nav-group">
+                <router-link to="/dashboard" class="nav-link" @click="open = false">
+                  <LayoutDashboard class="nav-icon" />
+                  Dashboard
+                </router-link>
+                <div v-if="showProjectSprint" class="nav-sub">
+                  <ProjectSelector />
+                  <SprintSelector />
+                </div>
+              </div>
               <router-link to="/my-tasks" class="nav-link" @click="open = false">
                 <User class="nav-icon" />
                 My Tasks
               </router-link>
             </nav>
-
-            <div v-if="showProjectSprint" class="drawer-section">
-              <ProjectSelector />
-              <SprintSelector />
-            </div>
 
             <div class="drawer-footer">
               <div class="user-pill">
@@ -211,16 +212,24 @@ const handleLogout = () => {
   color: white;
 }
 
+.nav-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.nav-sub {
+  padding-left: 2.5rem;
+  padding-right: 0;
+  padding-bottom: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
 .nav-icon {
   width: 1.125rem;
   height: 1.125rem;
-}
-
-.drawer-section {
-  padding: 0 1rem 1rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  padding-top: 1rem;
-  margin-top: auto;
 }
 
 .drawer-footer {
