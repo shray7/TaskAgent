@@ -21,9 +21,6 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: Frontend
     steps:
       - uses: actions/checkout@v4
 
@@ -31,26 +28,38 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: Frontend/package-lock.json
+
+      - name: Resolve app directory
+        id: app-dir
+        run: |
+          if [ -f Frontend/package.json ]; then
+            echo "dir=Frontend" >> $GITHUB_OUTPUT
+          elif [ -f package.json ]; then
+            echo "dir=." >> $GITHUB_OUTPUT
+          else
+            echo "No package.json found"
+            exit 1
+          fi
 
       - name: Install dependencies
         run: npm ci
+        working-directory: ${{ steps.app-dir.outputs.dir }}
 
       - name: Build
+        working-directory: ${{ steps.app-dir.outputs.dir }}
         env:
           BASE_PATH: /${{ github.event.repository.name }}/
-          # Set VITE_API_BASE repo variable, or it falls back to staging API
           VITE_API_BASE: ${{ vars.VITE_API_BASE || 'https://taskagent-api-staging.nicemeadow-03f2da8a.eastus.azurecontainerapps.io' }}
         run: npm run build
 
       - name: Setup 404 for SPA routing
         run: cp dist/index.html dist/404.html
+        working-directory: ${{ steps.app-dir.outputs.dir }}
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: Frontend/dist
+          path: ${{ steps.app-dir.outputs.dir }}/dist
 
   deploy:
     environment:
