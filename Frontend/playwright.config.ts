@@ -45,20 +45,49 @@ export default defineConfig({
 
   /* Configure projects for major browsers */
   projects: [
+    /* Screenshot projects - device-specific viewports */
+    {
+      name: 'desktop-screenshots',
+      testMatch: /screenshots\.spec\.ts/,
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 1280, height: 900 },
+      },
+    },
+    {
+      name: 'tablet-screenshots',
+      testMatch: /screenshots\.spec\.ts/,
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 834, height: 1194 },
+      },
+    },
+    {
+      name: 'mobile-screenshots',
+      testMatch: /screenshots\.spec\.ts/,
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 375, height: 812 },
+        isMobile: true,
+      },
+    },
     {
       name: 'chromium',
+      testIgnore: /screenshots\.spec\.ts/,
       use: {
         ...devices['Desktop Chrome'],
       },
     },
     {
       name: 'firefox',
+      testIgnore: /screenshots\.spec\.ts/,
       use: {
         ...devices['Desktop Firefox'],
       },
     },
     {
       name: 'webkit',
+      testIgnore: /screenshots\.spec\.ts/,
       use: {
         ...devices['Desktop Safari'],
       },
@@ -104,7 +133,7 @@ export default defineConfig({
      */
     command: 'npm run dev',
     port: 5173,
-    reuseExistingServer: false,
+    reuseExistingServer: true,
     timeout: 60000,
   },
 })

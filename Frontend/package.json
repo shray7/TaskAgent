@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "test:unit": "vitest",
     "test:e2e": "playwright test",
-    "screenshots": "playwright test e2e/screenshots.spec.ts --project=chromium",
+    "screenshots": "playwright test e2e/screenshots.spec.ts --project=desktop-screenshots --project=tablet-screenshots --project=mobile-screenshots",
     "build-only": "vite build",
     "type-check": "vue-tsc --build",
     "lint": "run-s lint:*",
