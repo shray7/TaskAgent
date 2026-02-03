@@ -22,6 +22,9 @@ Frontend/test-results/
 .idea/
 *.sln.docstates
 
+# Cursor: project rules under Backend/.cursor/rules and Frontend/.cursor/rules are committed
+# Do not add .cursor to the ignore list without keeping: !**/.cursor/rules/
+
 # Test / coverage
 [Tt]est[Rr]esult*/
 [Bb]uild[Ll]og.*

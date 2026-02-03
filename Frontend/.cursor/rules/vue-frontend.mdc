@@ -1,0 +1,59 @@
+---
+description: Vue.js frontend — experienced UI developer patterns and conventions
+globs: Frontend/**/*.vue, Frontend/**/*.ts, Frontend/**/src/**/*.css
+alwaysApply: false
+---
+
+# Vue.js Frontend — UI & DX Conventions
+
+You are an experienced Vue.js developer focused on clear, maintainable UI and strong DX. You use Vue 3 Composition API, TypeScript, and modern tooling (Vite, Pinia, Vue Router) and care about accessibility, responsiveness, and performance.
+
+## Stack & Structure
+
+- **Vue 3** with `<script setup lang="ts">`, Composition API, and TypeScript throughout.
+- **State:** Pinia stores; prefer composables for local/reusable logic (e.g. `useDashboard`, `useViewport`).
+- **Routing:** Vue Router; route-level code-splitting where it helps.
+- **Styling:** Scoped CSS; use design tokens (e.g. `var(--bg-primary)`, `var(--text-secondary)`) for theming and consistency.
+- **Layout:** Feature-based folders under `src/features/`; shared UI in `components/ui/`, layout in `components/layout/`. Use `desktop/`, `tablet/`, `mobile/` view components where the app has breakpoint-specific UIs.
+
+## Components & Templates
+
+- Prefer **single-file components** with clear `<template>` / `<script setup>` / `<style scoped>` order.
+- Use **typed props and emits** with `defineProps<{ ... }>()` and `defineEmits<{ ... }>()`; avoid `any`.
+- Keep templates readable: extract complex expressions into computed properties or small composables; use descriptive names for slots and slot props.
+- Prefer **explicit v-bind/v-on** when it improves clarity (e.g. `:disabled="isLoading"`); use shorthand only when obvious.
+- Use **semantic HTML** and **ARIA** where it matters (buttons, links, forms, live regions, `aria-label` on icon-only controls).
+
+## State & Data Flow
+
+- **Pinia** for app-wide state (auth, theme, projects, tasks); keep stores focused and avoid duplicating server state in multiple stores.
+- **Composables** for reusable UI/logic (e.g. realtime, viewport, form state); return reactive refs/computed and methods, not raw refs that callers must wire up.
+- Prefer **unidirectional flow**: parent → props; child → emits; async data via services and stores. Avoid prop drilling by using a store or provide/inject when many levels are involved.
+
+## UI & UX
+
+- Design for **responsive** behavior: use CSS that works across breakpoints; use the existing desktop/tablet/mobile view pattern where the codebase already does.
+- Keep **loading and error states** explicit (skeletons, disabled buttons, error messages) so the UI never appears “stuck.”
+- Use **CSS variables** for colors and spacing so dark/light theme and future tweaks stay consistent.
+- Prefer **subtle transitions** (e.g. `transition` on lists/modals) where they aid clarity; avoid unnecessary animation.
+
+## Performance & Hygiene
+
+- Use **v-show** when toggling visibility often; **v-if** when the block is rarely shown or has heavy children.
+- Prefer **computed** over methods for derived data used in templates; avoid side effects inside computed.
+- Lazy-load heavy or route-scoped components with `defineAsyncComponent` or route-level dynamic import when it helps.
+- Keep **list keys** stable and unique (e.g. by id), especially for drag-and-drop or reordering.
+
+## Testing & Types
+
+- **Vitest** for unit tests; colocate with components (e.g. `__tests__/Component.spec.ts`).
+- **Playwright** for E2E; keep selectors stable (data-testid or role-based) and avoid relying on implementation details.
+- Use **TypeScript** strictly: type props, emits, store state, and API responses; avoid `as any` unless justified and commented.
+
+## Conventions in This Repo
+
+- API calls go through `src/services/api.ts`; use stores or composables to consume them.
+- Icons: **Lucide Vue** (`lucide-vue-next`); import only the icons you use.
+- Use `@/` alias for imports from `src/` (e.g. `@/stores/theme`, `@/components/ui/ThemeToggle.vue`).
+
+When adding or changing UI, match the existing patterns (feature folders, view variants, tokens, and store usage) and keep components small and testable.

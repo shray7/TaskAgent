@@ -159,6 +159,7 @@ import { ArrowLeft, Check } from 'lucide-vue-next'
 import { useViewport } from '@/composables/useViewport'
 import MobileBottomNav from '@/components/layout/MobileBottomNav.vue'
 import { useAuthStore } from '@/stores/auth'
+import { useNotificationsStore } from '@/stores/notifications'
 import { useProjectsStore } from '@/stores/projects'
 import { useTasksStore } from '@/stores/tasks'
 import { useSprintsStore } from '@/stores/sprints'
@@ -169,6 +170,7 @@ import { SPRINT_DURATION_OPTIONS, COLUMN_OPTIONS } from '@/types'
 const router = useRouter()
 const { isMobile } = useViewport()
 const authStore = useAuthStore()
+const notificationsStore = useNotificationsStore()
 const projectsStore = useProjectsStore()
 const tasksStore = useTasksStore()
 const sprintsStore = useSprintsStore()
@@ -209,8 +211,8 @@ watch(
       name: p.name,
       description: p.description ?? '',
       color: p.color ?? projectColors[0],
-      startDate: p.startDate ? new Date(p.startDate).toISOString().split('T')[0] : '',
-      endDate: p.endDate ? new Date(p.endDate).toISOString().split('T')[0] : '',
+      startDate: p.startDate ? (new Date(p.startDate).toISOString().split('T')[0] ?? '') : '',
+      endDate: p.endDate ? (new Date(p.endDate).toISOString().split('T')[0] ?? '') : '',
       ownerId: p.ownerId,
       sprintDurationDays: p.sprintDurationDays ?? 14,
       taskSizeUnit: p.taskSizeUnit ?? 'hours',
@@ -264,7 +266,7 @@ async function executeDelete() {
       showDeleteConfirm.value = false
       router.push('/dashboard')
     } else {
-      alert(result.message ?? 'Failed to delete project')
+      notificationsStore.showError(result.message ?? 'Failed to delete project')
     }
   } finally {
     deleting.value = false

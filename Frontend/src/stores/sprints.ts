@@ -4,6 +4,7 @@ import type { Sprint, SprintStatus } from '@/types'
 import { sprintDurationMs } from '@/types'
 import { api } from '@/services/api'
 import { useProjectsStore } from './projects'
+import { useNotificationsStore } from './notifications'
 
 export const useSprintsStore = defineStore(
   'sprints',
@@ -23,8 +24,9 @@ export const useSprintsStore = defineStore(
       try {
         sprints.value = await api.sprints.getAll(projectId)
         loaded.value = true
-      } catch {
+      } catch (err) {
         sprints.value = []
+        useNotificationsStore().showError(err instanceof Error ? err.message : 'Failed to load sprints')
       } finally {
         loading.value = false
       }

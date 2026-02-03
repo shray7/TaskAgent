@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import type { Project, TaskStatus } from '@/types'
 import { DEFAULT_SPRINT_DURATION_DAYS } from '@/types'
 import { api } from '@/services/api'
+import { useNotificationsStore } from './notifications'
 
 const defaultColumns: TaskStatus[] = ['todo', 'in-progress', 'completed']
 
@@ -25,8 +26,9 @@ export const useProjectsStore = defineStore(
       try {
         projects.value = await api.projects.getAll()
         loaded.value = true
-      } catch {
+      } catch (err) {
         projects.value = []
+        useNotificationsStore().showError(err instanceof Error ? err.message : 'Failed to load projects')
       } finally {
         loading.value = false
       }

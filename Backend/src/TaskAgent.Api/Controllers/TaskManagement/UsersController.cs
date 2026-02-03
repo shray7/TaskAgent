@@ -25,7 +25,7 @@ public class UsersController : ControllerBase
     public async Task<ActionResult<AppUserDto>> GetById(int id, CancellationToken ct)
     {
         var user = await _users.GetByIdAsync(id, ct);
-        if (user == null) return NotFound();
+        if (user == null) return NotFound(new ApiErrorDto("User not found"));
         return Ok(user);
     }
 
@@ -34,7 +34,7 @@ public class UsersController : ControllerBase
     public async Task<ActionResult<AppUserDto>> GetByEmail(string email, CancellationToken ct)
     {
         var user = await _users.GetByEmailAsync(email, ct);
-        if (user == null) return NotFound();
+        if (user == null) return NotFound(new ApiErrorDto("User not found"));
         return Ok(user);
     }
 

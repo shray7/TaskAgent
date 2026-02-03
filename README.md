@@ -12,6 +12,7 @@
 | **Projects & Sprints** | CRUD for projects and sprints, project/sprint selectors |
 | **Tasks** | Create/edit tasks, inline editing (title, assignee, due date, priority), drag-and-drop on board, tags, comments |
 | **UI** | Dark/light theme, responsive layouts for desktop, tablet, mobile |
+| **Real-time board** | Socket.IO server; task create/update/delete broadcast so multiple viewers see changes immediately |
 | **File attachments** | Via File Service (local or Azure Blob) |
 
 ## Technologies
@@ -28,9 +29,6 @@
 - Swagger/OpenAPI
 - Azure AD / RBAC for passwordless SQL (production)
 
-**File Service**
-- ASP.NET Core, Azure Blob Storage or local filesystem
-
 **Infrastructure**
 - Docker, docker-compose
 - GitHub Actions (deploy-backend, deploy-pages)
@@ -44,12 +42,9 @@ flowchart LR
     subgraph monorepo [TaskAgent Monorepo]
         Backend[Backend API]
         Frontend[Vue Frontend]
-        FileService[File Service]
     end
     Frontend -->|/api| Backend
-    Frontend -->|/api/files| FileService
     Backend --> SQL[(SQL Server)]
-    FileService --> Storage[(Blob/Local)]
 ```
 
 ```mermaid
@@ -65,22 +60,16 @@ flowchart TB
 
     subgraph backend [Backend]
         API[TaskAgent API]
-        FileSvc[File Service]
     end
 
     subgraph data [Data]
         SQL[Azure SQL]
-        Blob[Azure Blob]
     end
 
     Vue --> Pages
     Vue -->|REST| API
-    Vue -->|Files| FileSvc
     API --> SQL
-    API --> FileSvc
-    FileSvc --> Blob
     API --> ACA
-    FileSvc --> ACA
 ```
 
 ## Screenshots
@@ -123,8 +112,7 @@ TaskAgent/
 │   │   └── stores/
 │   ├── e2e/           # Playwright tests
 │   └── screenshots/   # Generated screenshots by device/feature
-├── FileService/       # Standalone file storage (local or Azure Blob)
-├── .github/workflows/ # deploy-backend.yml, deploy-pages.yml
+├── .github/workflows/   # ci.yml, deploy.yml (staging→production), deploy-pages.yml, synthetic-tests.yml
 └── docker-compose.yml
 ```
 
@@ -137,8 +125,7 @@ docker compose up --build
 ```
 
 - **API**: http://localhost:5001
-- **File Service**: http://localhost:5002
-- **Web (nginx)**: http://localhost:80 – serves the UI and proxies `/api` to the API and `/api/files` to File Service
+- **Web (nginx)**: http://localhost:80 – serves the UI and proxies `/api` to the API
 
 ### Run locally (development)
 
@@ -147,17 +134,12 @@ docker compose up --build
 cd Backend && dotnet run --project src/TaskAgent.Api
 ```
 
-**File Service:**
-```bash
-cd FileService && dotnet run
-```
-
 **Frontend:**
 ```bash
 cd Frontend && npm install && npm run dev
 ```
 
-Set `VITE_API_BASE=http://localhost:5001` in Frontend `.env` for local API. File uploads go to File Service at port 5002 when using `VITE_FILE_SERVICE_URL` (or configure proxy).
+Set `VITE_API_BASE=http://localhost:5001` in Frontend `.env` for local API. For more detail and a full env reference, see [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/ENV.md](docs/ENV.md).
 
 ## Scripts
 
@@ -169,14 +151,24 @@ Set `VITE_API_BASE=http://localhost:5001` in Frontend `.env` for local API. File
 - `npm run test:e2e` – Playwright E2E
 
 **Backend**
-- `dotnet run --project src/TaskAgent.Api` – Run API
-- `dotnet test` – Run tests
+- From repo root: `dotnet run --project Backend/src/TaskAgent.Api` – Run API
+- From repo root: `dotnet test TaskAgent.sln` – Run tests
+
+## Environment variables
+
+See [docs/ENV.md](docs/ENV.md) for a single reference of all environment variables used by the backend, frontend, and realtime server.
+
+**Backend (appsettings or env)**  
+`ConnectionStrings__SqlDb`, `Cors__AllowedOrigins`, `Realtime__ServerUrl`
+
+**Frontend (`.env` or build-time)**  
+`VITE_API_BASE`, `VITE_REALTIME_URL` (optional)
 
 ## Deployment
 
 ### Backend
 
-Deployed to Azure Container Apps via `.github/workflows/deploy-backend.yml`. Uses Azure AD / RBAC for passwordless SQL access.
+Deployed to Azure Container Apps via `.github/workflows/deploy.yml` (staging then production). Uses Azure AD / RBAC for passwordless SQL access.
 
 ### Frontend (GitHub Pages)
 

@@ -26,7 +26,7 @@ public class ProjectsController : ControllerBase
     public async Task<ActionResult<ProjectDto>> GetById(int id, CancellationToken ct)
     {
         var p = await _projects.GetByIdAsync(id, ct);
-        if (p == null) return NotFound();
+        if (p == null) return NotFound(new ApiErrorDto("Project not found"));
         return Ok(p);
     }
 
@@ -34,7 +34,7 @@ public class ProjectsController : ControllerBase
     public async Task<ActionResult<ProjectDto>> Create([FromBody] CreateProjectRequest req, CancellationToken ct)
     {
         var (dto, error) = await _projects.CreateAsync(req, ct);
-        if (error != null) return BadRequest(error);
+        if (error != null) return BadRequest(new ApiErrorDto(error));
         return CreatedAtAction(nameof(GetById), new { id = dto!.Id }, dto);
     }
 
@@ -42,7 +42,7 @@ public class ProjectsController : ControllerBase
     public async Task<ActionResult<ProjectDto>> Update(int id, [FromBody] UpdateProjectRequest req, CancellationToken ct)
     {
         var (dto, error) = await _projects.UpdateAsync(id, req, ct);
-        if (error != null) return NotFound();
+        if (error != null) return NotFound(new ApiErrorDto("Project not found"));
         return Ok(dto);
     }
 
@@ -54,8 +54,8 @@ public class ProjectsController : ControllerBase
     public async Task<IActionResult> Delete(int id, [FromQuery] int userId, CancellationToken ct)
     {
         var result = await _projects.DeleteAsync(id, userId, ct);
-        if (result == 0) return NotFound();
-        if (result == 1) return Forbid();
+        if (result == 0) return NotFound(new ApiErrorDto("Project not found"));
+        if (result == 1) return StatusCode(403, new ApiErrorDto("Only the project owner can delete this project"));
         return NoContent();
     }
 }

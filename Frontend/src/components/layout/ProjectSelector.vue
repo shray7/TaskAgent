@@ -272,6 +272,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useNotificationsStore } from '@/stores/notifications'
 import { useProjectsStore } from '@/stores/projects'
 import { useTasksStore } from '@/stores/tasks'
 import { useSprintsStore } from '@/stores/sprints'
@@ -283,6 +284,7 @@ import CommentList from '@/features/dashboard/components/CommentList.vue'
 import { SPRINT_DURATION_OPTIONS, COLUMN_OPTIONS } from '@/types'
 import type { TaskStatus } from '@/types'
 
+const notificationsStore = useNotificationsStore()
 const projectsStore = useProjectsStore()
 const tasksStore = useTasksStore()
 const sprintsStore = useSprintsStore()
@@ -360,7 +362,7 @@ async function executeDeleteProject(): Promise<void> {
   try {
     const result = await projectsStore.deleteProject(projectToDelete.value.id, currentUserId.value)
     if (!result.success) {
-      alert(result.message || 'Failed to delete project')
+      notificationsStore.showError(result.message || 'Failed to delete project')
       return
     }
 

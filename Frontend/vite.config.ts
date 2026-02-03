@@ -7,7 +7,7 @@ import vueDevTools from 'vite-plugin-vue-devtools'
 
 // https://vite.dev/config/
 export default defineConfig({
-  // GitHub Pages: set BASE_PATH to /repo-name/ (e.g. /TaskFlow/)
+  // GitHub Pages: set BASE_PATH to /repo-name/ (e.g. /TaskAgent/)
   base: process.env.BASE_PATH || '/',
   plugins: [
     vue(),

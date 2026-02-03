@@ -31,14 +31,14 @@ public class CommentsController : ControllerBase
     public async Task<ActionResult<CommentDto>> Create([FromBody] CreateCommentRequest req, CancellationToken ct)
     {
         var (dto, error) = await _comments.CreateAsync(req, ct);
-        if (error != null) return BadRequest(error);
+        if (error != null) return BadRequest(new ApiErrorDto(error));
         return Created($"/api/tm/comments/{dto!.Id}", dto);
     }
 
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id, CancellationToken ct)
     {
-        if (!await _comments.DeleteAsync(id, ct)) return NotFound();
+        if (!await _comments.DeleteAsync(id, ct)) return NotFound(new ApiErrorDto("Comment not found"));
         return NoContent();
     }
 }

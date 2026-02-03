@@ -6,6 +6,8 @@
 
 import type { User, Project, Sprint, Task, TaskStatus, Comment } from '@/types'
 import { DEFAULT_SPRINT_DURATION_DAYS, sprintDurationMs } from '@/types'
+import { captureCorrelationIdFromResponse, getCorrelationIdHeader } from '@/utils/correlationId'
+import { logger } from '@/utils/logger'
 
 // Empty string = relative URLs (e.g. when served behind nginx proxy in Docker)
 const baseUrl = (import.meta.env.VITE_API_BASE as string | undefined) ?? ''
@@ -80,15 +82,59 @@ function normalizeTask(t: Record<string, unknown>): Task {
   }
 }
 
-// --- HTTP client ---
+/** Normalize task from realtime/Socket payload (camelCase from .NET). */
+export function normalizeTaskFromPayload(t: Record<string, unknown>): Task {
+  return normalizeTask(t)
+}
+
+// --- HTTP client (with correlation ID and request logging) ---
+
+/** Parse error message from API error body (e.g. { message: string }) or fallback to statusText. */
+async function getErrorMessage(res: Response): Promise<string> {
+  const text = await res.text()
+  if (!text) return res.statusText || 'Request failed'
+  try {
+    const json = JSON.parse(text) as { message?: string }
+    if (typeof json?.message === 'string' && json.message.trim()) return json.message.trim()
+  } catch {
+    /* ignore */
+  }
+  return res.statusText || 'Request failed'
+}
+
+/**
+ * Fetch with X-Correlation-Id header, response capture, and request/response logging.
+ * Does not log request/response bodies (best practice).
+ */
+async function fetchWithLogging(url: string, init?: RequestInit): Promise<Response> {
+  const method = init?.method ?? 'GET'
+  const headers = { ...getCorrelationIdHeader(), 'Content-Type': 'application/json', ...init?.headers } as Record<string, string>
+  const start = performance.now()
+  logger.debug('API request', { method, url })
+  try {
+    const res = await fetch(url, { ...init, headers })
+    captureCorrelationIdFromResponse(res)
+    const elapsed = Math.round(performance.now() - start)
+    if (res.ok) {
+      logger.info('API response', { method, url, status: res.status, elapsedMs: elapsed })
+    } else {
+      logger.warn('API response', { method, url, status: res.status, elapsedMs: elapsed })
+    }
+    return res
+  } catch (err) {
+    const elapsed = Math.round(performance.now() - start)
+    logger.error('API request failed', { method, url, elapsedMs: elapsed, error: err instanceof Error ? err.message : String(err) })
+    throw err
+  }
+}
 
 async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${baseUrl}${path}`, {
-    ...init,
-    headers: { 'Content-Type': 'application/json', ...init?.headers }
-  })
-  if (!res.ok) throw new Error(`API error ${res.status}: ${res.statusText}`)
-  return res.json()
+  const res = await fetchWithLogging(`${baseUrl}${path}`, init)
+  if (!res.ok) {
+    const message = await getErrorMessage(res)
+    throw new Error(message)
+  }
+  return res.json() as Promise<T>
 }
 
 // --- Mock data (used when no backend) ---
@@ -371,9 +417,8 @@ export const api = {
     async login(email: string, password: string): Promise<AuthResponse> {
       if (useHttp) {
         try {
-          const res = await fetch(`${baseUrl}/api/tm/users/login`, {
+          const res = await fetchWithLogging(`${baseUrl}/api/tm/users/login`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password })
           })
           const data = await res.json()
@@ -405,9 +450,8 @@ export const api = {
     async register(email: string, name: string, password: string): Promise<AuthResponse> {
       if (useHttp) {
         try {
-          const res = await fetch(`${baseUrl}/api/tm/users/register`, {
+          const res = await fetchWithLogging(`${baseUrl}/api/tm/users/register`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, name, password })
           })
           const data = await res.json()
@@ -503,10 +547,9 @@ export const api = {
           ...data,
           createdAt: new Date().toISOString()
         }
-        const res = await fetch(`${baseUrl}/api/tm/projects`, {
+        const res = await fetchWithLogging(`${baseUrl}/api/tm/projects`, {
           method: 'POST',
-          body: JSON.stringify(body),
-          headers: { 'Content-Type': 'application/json' }
+          body: JSON.stringify(body)
         })
         const p = await res.json()
         return normalizeProject(p)
@@ -523,10 +566,9 @@ export const api = {
     async update(id: number, data: Partial<Project>): Promise<Project | null> {
       if (useHttp) {
         try {
-          const res = await fetch(`${baseUrl}/api/tm/projects/${id}`, {
+          const res = await fetchWithLogging(`${baseUrl}/api/tm/projects/${id}`, {
             method: 'PUT',
-            body: JSON.stringify(data),
-            headers: { 'Content-Type': 'application/json' }
+            body: JSON.stringify(data)
           })
           if (!res.ok) return null
           const p = await res.json()
@@ -543,7 +585,7 @@ export const api = {
 
     async delete(id: number, userId: number): Promise<{ success: boolean; message?: string }> {
       if (useHttp) {
-        const res = await fetch(`${baseUrl}/api/tm/projects/${id}?userId=${userId}`, { method: 'DELETE' })
+        const res = await fetchWithLogging(`${baseUrl}/api/tm/projects/${id}?userId=${userId}`, { method: 'DELETE' })
         if (res.status === 403) {
           return { success: false, message: 'Only the project owner can delete this project' }
         }
@@ -626,10 +668,9 @@ export const api = {
     async update(id: number, data: Partial<Sprint>): Promise<Sprint | null> {
       if (useHttp) {
         try {
-          const res = await fetch(`${baseUrl}/api/tm/sprints/${id}`, {
+          const res = await fetchWithLogging(`${baseUrl}/api/tm/sprints/${id}`, {
             method: 'PUT',
-            body: JSON.stringify(data),
-            headers: { 'Content-Type': 'application/json' }
+            body: JSON.stringify(data)
           })
           if (!res.ok) return null
           const s = await res.json()
@@ -647,7 +688,7 @@ export const api = {
     async start(id: number): Promise<Sprint | null> {
       if (useHttp) {
         try {
-          const res = await fetch(`${baseUrl}/api/tm/sprints/${id}/start`, { method: 'PUT' })
+          const res = await fetchWithLogging(`${baseUrl}/api/tm/sprints/${id}/start`, { method: 'PUT' })
           if (!res.ok) return null
           const s = await res.json()
           return normalizeSprint(s)
@@ -666,7 +707,7 @@ export const api = {
     async complete(id: number): Promise<Sprint | null> {
       if (useHttp) {
         try {
-          const res = await fetch(`${baseUrl}/api/tm/sprints/${id}/complete`, { method: 'PUT' })
+          const res = await fetchWithLogging(`${baseUrl}/api/tm/sprints/${id}/complete`, { method: 'PUT' })
           if (!res.ok) return null
           const s = await res.json()
           return normalizeSprint(s)
@@ -682,7 +723,7 @@ export const api = {
 
     async delete(id: number): Promise<void> {
       if (useHttp) {
-        await fetch(`${baseUrl}/api/tm/sprints/${id}`, { method: 'DELETE' })
+        await fetchWithLogging(`${baseUrl}/api/tm/sprints/${id}`, { method: 'DELETE' })
         return
       }
       mockData.sprints = mockData.sprints.filter(s => s.id !== id)
@@ -746,10 +787,9 @@ export const api = {
     async update(id: number, data: Partial<Task>): Promise<Task | null> {
       if (useHttp) {
         try {
-          const res = await fetch(`${baseUrl}/api/tm/tasks/${id}`, {
+          const res = await fetchWithLogging(`${baseUrl}/api/tm/tasks/${id}`, {
             method: 'PUT',
-            body: JSON.stringify(data),
-            headers: { 'Content-Type': 'application/json' }
+            body: JSON.stringify(data)
           })
           if (!res.ok) return null
           const t = await res.json()
@@ -766,7 +806,7 @@ export const api = {
 
     async delete(id: number): Promise<void> {
       if (useHttp) {
-        await fetch(`${baseUrl}/api/tm/tasks/${id}`, { method: 'DELETE' })
+        await fetchWithLogging(`${baseUrl}/api/tm/tasks/${id}`, { method: 'DELETE' })
         return
       }
       mockData.tasks = mockData.tasks.filter(t => t.id !== id)
@@ -817,7 +857,7 @@ export const api = {
 
     async delete(id: number): Promise<void> {
       if (useHttp) {
-        await fetch(`${baseUrl}/api/tm/comments/${id}`, { method: 'DELETE' })
+        await fetchWithLogging(`${baseUrl}/api/tm/comments/${id}`, { method: 'DELETE' })
         return
       }
       mockData.comments = mockData.comments.filter(c => c.id !== id)

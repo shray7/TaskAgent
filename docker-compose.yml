@@ -1,3 +1,7 @@
+# Run from repo root.
+# API only (InMemory):  docker compose up --build api
+# API + SQL/Mongo DBs: docker compose --profile databases up --build
+
 services:
   api:
     build:
@@ -10,21 +14,34 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:8080
       - DataStore__DatabaseName=TaskAgentDb
+    # InMemory DB by default; for SQL Server set DataStore__Type=SqlServer and connection string
 
-  file-service:
-    build:
-      context: ./FileService
-      dockerfile: Dockerfile
-    container_name: taskagent-file-service
-    ports:
-      - "5002:8080"
+  # Optional: run only when using SQL Server for local dev
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: taskagent-sqlserver
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_URLS=http://+:8080
-      - FileStorage__UseAzure=false
-      - FileStorage__LocalPath=/app/uploads
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=TaskAgent123!
+      - MSSQL_PID=Developer
+    ports:
+      - "1433:1433"
     volumes:
-      - file-uploads:/app/uploads
+      - sqlserver-data:/var/opt/mssql
+    profiles:
+      - databases
+
+  # Optional: run only when using MongoDB for local dev
+  mongodb:
+    image: mongo:7
+    container_name: taskagent-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb-data:/data/db
+    profiles:
+      - databases
 
 volumes:
-  file-uploads:
+  sqlserver-data:
+  mongodb-data:

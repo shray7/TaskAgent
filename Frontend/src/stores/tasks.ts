@@ -4,6 +4,7 @@ import type { Task, TaskStatus } from '@/types'
 import { api } from '@/services/api'
 import { useProjectsStore } from './projects'
 import { useSprintsStore } from './sprints'
+import { useNotificationsStore } from './notifications'
 
 export const useTasksStore = defineStore('tasks', () => {
   const tasks = ref<Task[]>([])
@@ -36,8 +37,9 @@ export const useTasksStore = defineStore('tasks', () => {
     try {
       tasks.value = await api.tasks.getAll(params)
       loaded.value = true
-    } catch {
+    } catch (err) {
       tasks.value = []
+      useNotificationsStore().showError(err instanceof Error ? err.message : 'Failed to load tasks')
     } finally {
       loading.value = false
     }
@@ -104,6 +106,23 @@ export const useTasksStore = defineStore('tasks', () => {
     return updateTask(taskId, { projectId, sprintId: undefined })
   }
 
+  /** Apply realtime TaskCreated (from another client). */
+  function applyTaskCreated(task: Task): void {
+    if (tasks.value.some(t => t.id === task.id)) return
+    tasks.value.push(task)
+  }
+
+  /** Apply realtime TaskUpdated (from another client). */
+  function applyTaskUpdated(task: Task): void {
+    const idx = tasks.value.findIndex(t => t.id === task.id)
+    if (idx !== -1) tasks.value[idx] = task
+  }
+
+  /** Apply realtime TaskDeleted (from another client). */
+  function applyTaskDeleted(taskId: number): void {
+    tasks.value = tasks.value.filter(t => t.id !== taskId)
+  }
+
   return {
     tasks,
     filteredTasks,
@@ -123,6 +142,9 @@ export const useTasksStore = defineStore('tasks', () => {
     getTasksBySprint,
     getTasksByProjectAndSprint,
     moveTaskToSprint,
-    moveTaskToProject
+    moveTaskToProject,
+    applyTaskCreated,
+    applyTaskUpdated,
+    applyTaskDeleted
   }
 })
