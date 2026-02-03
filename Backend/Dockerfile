@@ -1,21 +1,21 @@
-# Build stage
+# Build stage (context: repo root; solution at root, Backend code under Backend/)
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
-# Copy solution and project files
+# Copy solution and project files (paths relative to repo root)
 COPY TaskAgent.sln .
-COPY src/TaskAgent.Api/TaskAgent.Api.csproj src/TaskAgent.Api/
-COPY src/TaskAgent.Contracts/TaskAgent.Contracts.csproj src/TaskAgent.Contracts/
-COPY src/TaskAgent.DataAccess/TaskAgent.DataAccess.csproj src/TaskAgent.DataAccess/
+COPY Backend/src/TaskAgent.Api/TaskAgent.Api.csproj Backend/src/TaskAgent.Api/
+COPY Backend/src/TaskAgent.Contracts/TaskAgent.Contracts.csproj Backend/src/TaskAgent.Contracts/
+COPY Backend/src/TaskAgent.DataAccess/TaskAgent.DataAccess.csproj Backend/src/TaskAgent.DataAccess/
 
 # Restore dependencies
-RUN dotnet restore src/TaskAgent.Api/TaskAgent.Api.csproj
+RUN dotnet restore Backend/src/TaskAgent.Api/TaskAgent.Api.csproj
 
 # Copy source code
-COPY src/ src/
+COPY Backend/src/ Backend/src/
 
 # Build and publish
-RUN dotnet publish src/TaskAgent.Api/TaskAgent.Api.csproj -c Release -o /app/publish --no-restore
+RUN dotnet publish Backend/src/TaskAgent.Api/TaskAgent.Api.csproj -c Release -o /app/publish --no-restore
 
 # Runtime stage
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime

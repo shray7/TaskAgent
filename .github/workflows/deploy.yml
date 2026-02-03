@@ -57,9 +57,8 @@ jobs:
 
       - name: Build and push image
         run: |
-          cd Backend
-          docker build -t ${{ env.ACR_NAME }}.azurecr.io/taskagent:${{ github.sha }} .
-          docker build -t ${{ env.ACR_NAME }}.azurecr.io/taskagent:latest .
+          docker build -f Backend/Dockerfile -t ${{ env.ACR_NAME }}.azurecr.io/taskagent:${{ github.sha }} .
+          docker tag ${{ env.ACR_NAME }}.azurecr.io/taskagent:${{ github.sha }} ${{ env.ACR_NAME }}.azurecr.io/taskagent:latest
           docker push ${{ env.ACR_NAME }}.azurecr.io/taskagent:${{ github.sha }}
           docker push ${{ env.ACR_NAME }}.azurecr.io/taskagent:latest
 
