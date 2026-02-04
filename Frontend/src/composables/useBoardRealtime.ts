@@ -4,14 +4,18 @@ import type { Socket } from 'socket.io-client'
 import { useTasksStore } from '@/stores/tasks'
 import { normalizeTaskFromPayload } from '@/services/api'
 
+// Feature flag: realtime is off by default; set VITE_REALTIME_ENABLED=true to enable
+const isRealtimeEnabled =
+  (import.meta.env.VITE_REALTIME_ENABLED as string)?.toLowerCase() === 'true'
 const realtimeUrl = (import.meta.env.VITE_REALTIME_URL as string)?.trim() || ''
+const canUseRealtime = isRealtimeEnabled && realtimeUrl
 
 export function useBoardRealtime(projectId: Ref<number | null>, sprintId: Ref<number | null>) {
   const tasksStore = useTasksStore()
   let socket: Socket | null = null
 
   function connect() {
-    if (!realtimeUrl || socket?.connected) return
+    if (!canUseRealtime || socket?.connected) return
     socket = io(realtimeUrl, { path: '/socket.io', autoConnect: true })
     socket.on('connect', () => {
       joinBoard(projectId.value, sprintId.value)
@@ -49,7 +53,7 @@ export function useBoardRealtime(projectId: Ref<number | null>, sprintId: Ref<nu
   watch(
     [projectId, sprintId],
     ([pid, sid], [prevPid, prevSid]) => {
-      if (!realtimeUrl) return
+      if (!canUseRealtime) return
       if (!socket) connect()
       if (socket?.connected) {
         const prevP = prevPid as number | null | undefined

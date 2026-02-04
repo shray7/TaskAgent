@@ -62,7 +62,7 @@ cd Backend/realtime && npm install && npm run dev
 
 - Server runs on port **3001** by default (`PORT` env to override).
 - Backend: set `Realtime__ServerUrl` (e.g. `http://localhost:3001`) in appsettings or env.
-- Frontend: set `VITE_REALTIME_URL=http://localhost:3001` in `.env`.
+- Frontend: set `VITE_REALTIME_ENABLED=true` and `VITE_REALTIME_URL=http://localhost:3001` in `.env`.
 
 See [Backend/realtime/README.md](Backend/realtime/README.md) for protocol and configuration details.
 

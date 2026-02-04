@@ -12,7 +12,9 @@
 | **Projects & Sprints** | CRUD for projects and sprints, project/sprint selectors |
 | **Tasks** | Create/edit tasks, inline editing (title, assignee, due date, priority), drag-and-drop on board, tags, comments |
 | **UI** | Dark/light theme, responsive layouts for desktop, tablet, mobile |
-| **Real-time board** | Socket.IO server (`Backend/realtime`); task create/update/delete broadcast so multiple viewers see changes immediately |
+| **Real-time board** | Socket.IO server (`Backend/realtime`); task create/update/delete broadcast so multiple viewers see changes immediately. Toggleable via feature flag (Docker + frontend; off by default). |
+| **Logging** | Backend request logging with correlation IDs for tracing; configurable log levels per environment |
+| **Feature flags** | Realtime feature can be turned on/off via config (Docker: `REALTIME_SERVER_URL`; Frontend: `VITE_REALTIME_ENABLED`). Default: off. |
 
 ## Technologies
 
@@ -89,7 +91,7 @@ TaskAgent/
 docker compose up --build api
 ```
 
-API at **http://localhost:5001** (InMemory DB). Use `--profile databases` to add SQL Server / MongoDB.
+API at **http://localhost:5001** (InMemory DB). Use `--profile databases` to add SQL Server / MongoDB. Realtime is **off by default**; use `--profile realtime` with `REALTIME_SERVER_URL=http://realtime:3001` in `.env` to enable.
 
 **2. Frontend** — in another terminal:
 
@@ -101,11 +103,10 @@ Create `Frontend/.env` from `.env.example` and set `VITE_API_BASE=http://localho
 
 **3. Realtime (optional)** — for live board updates:
 
-```bash
-cd Backend/realtime && npm install && npm run dev
-```
+- **Via Docker:** `docker compose --profile realtime up --build` (add `REALTIME_SERVER_URL=http://realtime:3001` to `.env`)
+- **Standalone:** `cd Backend/realtime && npm install && npm run dev`
 
-Set `Realtime__ServerUrl` in backend config and `VITE_REALTIME_URL` in Frontend `.env` (see [docs/ENV.md](docs/ENV.md)).
+Set `Realtime__ServerUrl` in backend config; in Frontend `.env` set `VITE_REALTIME_ENABLED=true` and `VITE_REALTIME_URL` (see [docs/ENV.md](docs/ENV.md)).
 
 **Backend without Docker:** `dotnet run --project Backend/src/TaskAgent.Api` from repo root. Full env reference: [CONTRIBUTING.md](CONTRIBUTING.md), [docs/ENV.md](docs/ENV.md).
 
@@ -129,17 +130,139 @@ Set `Realtime__ServerUrl` in backend config and `VITE_REALTIME_URL` in Frontend 
 **Realtime**
 - `cd Backend/realtime && npm run dev` – Socket.IO server (default port 3001)
 
-## Environment variables
+## Database Schema
 
-See [docs/ENV.md](docs/ENV.md) for a single reference of all environment variables used by the backend, frontend, and realtime server.
+Below is a high-level overview of the core domain models used by TaskAgent. The primary entities are stored in either an in-memory store (development), MongoDB, or SQL Server, depending on configuration.  
+**Most entities include an `IsDeleted` boolean field for soft deletes.**
 
-**Backend (appsettings or env)**  
-`ConnectionStrings__SqlDb`, `Cors__AllowedOrigins`, `Realtime__ServerUrl`, `Jwt__Key` (required for auth in staging/production)
+### **Task**
 
-**Frontend (`.env` or build-time)**  
-`VITE_API_BASE`, `VITE_REALTIME_URL` (optional)
+| Field         | Type     | Description                                                                            |
+|---------------|----------|----------------------------------------------------------------------------------------|
+| Id            | string   | Unique identifier (GUID)                                                               |
+| Title         | string   | Task title                                                                             |
+| Description   | string   | Task details (optional)                                                                |
+| Status        | string   | Status (e.g., "To Do", "In Progress", "Done")                                          |
+| Priority      | int      | Priority (optional)                                                                    |
+| AssigneeId    | string   | Reference to User (foreign key: the user assigned to this task; optional)              |
+| BoardId       | string   | Reference to Board (foreign key: the board containing this task)                       |
+| SprintId      | string   | Reference to Sprint (foreign key: the sprint this task belongs to; optional)           |
+| IsDeleted     | bool     | Soft-delete flag (true if deleted)                                                     |
+| CreatedAt     | DateTime | Timestamp when created                                                                 |
+| UpdatedAt     | DateTime | Timestamp when last updated                                                            |
 
-**Local and staging setup:** For a step-by-step checklist so the app works both locally and in staging (JWT, CORS, env vars), see [docs/LOCAL_AND_STAGING.md](docs/LOCAL_AND_STAGING.md).
+### **Board**
+
+| Field       | Type     | Description                                                                                                  |
+|-------------|----------|--------------------------------------------------------------------------------------------------------------|
+| Id          | string   | Unique identifier (GUID)                                                                                     |
+| Name        | string   | Board name                                                                                                   |
+| ProjectId   | string   | Reference to Project (foreign key: the project this board belongs to)                                        |
+| OwnerId     | string   | Reference to User (foreign key: the user who owns this board)                                                |
+| IsDeleted   | bool     | Soft-delete flag                                                                                             |
+| CreatedAt   | DateTime | Creation timestamp                                                                                           |
+| UpdatedAt   | DateTime | Last modified timestamp                                                                                      |
+
+### **Project**
+
+| Field       | Type     | Description                                                                    |
+|-------------|----------|--------------------------------------------------------------------------------|
+| Id          | string   | Unique identifier (GUID)                                                       |
+| Name        | string   | Project name                                                                   |
+| Description | string   | Project description (optional)                                                 |
+| OwnerId     | string   | Reference to User (foreign key: the user who owns this project)                |
+| IsDeleted   | bool     | Soft-delete flag                                                               |
+| CreatedAt   | DateTime | Creation timestamp                                                             |
+| UpdatedAt   | DateTime | Last modified timestamp                                                        |
+
+### **Sprint**
+
+| Field       | Type     | Description                                                        |
+|-------------|----------|--------------------------------------------------------------------|
+| Id          | string   | Unique identifier (GUID)                                           |
+| Name        | string   | Sprint name                                                        |
+| ProjectId   | string   | Reference to Project (foreign key: the project this sprint belongs to) |
+| StartDate   | DateTime | Sprint start date                                                  |
+| EndDate     | DateTime | Sprint end date                                                    |
+| IsDeleted   | bool     | Soft-delete flag                                                   |
+| CreatedAt   | DateTime | Creation timestamp                                                 |
+| UpdatedAt   | DateTime | Last modified timestamp                                            |
+
+### **Comment**
+
+| Field       | Type     | Description                                                                                       |
+|-------------|----------|---------------------------------------------------------------------------------------------------|
+| Id          | string   | Unique identifier (GUID)                                                                          |
+| TaskId      | string   | Reference to Task (foreign key: the task this comment belongs to)                                 |
+| UserId      | string   | Reference to User (foreign key: the author of the comment)                                        |
+| Content     | string   | Comment content                                                                                   |
+| CreatedAt   | DateTime | Creation timestamp                                                                                |
+| UpdatedAt   | DateTime | Last modified timestamp                                                                           |
+| IsDeleted   | bool     | Soft-delete flag                                                                                  |
+
+### **User**
+
+| Field        | Type     | Description                                         |
+|--------------|----------|-----------------------------------------------------|
+| Id           | string   | Unique identifier (GUID)                            |
+| Name         | string   | User's display name                                 |
+| Email        | string   | Email address                                       |
+| PasswordHash | string   | Hashed password                                     |
+| Role         | string   | User role (e.g., "User", "Admin")                   |
+| IsDeleted    | bool     | Soft-delete flag                                    |
+| CreatedAt    | DateTime | Creation timestamp                                  |
+| UpdatedAt    | DateTime | Last modified timestamp                             |
+
+## User flows
+
+**Authentication**
+- Login (email + password); sign up (name, email, password); log out.
+- Demo accounts: pick a demo user, password pre-filled; submit to sign in.
+- Profile page (placeholder; no settings flow yet).
+
+**Dashboard (project/sprint context)**
+- Empty state: no projects → "Create your first project" → create project form.
+- Select project and sprint from header; create project (ProjectSelector) or create sprint (SprintSelector).
+- Switch view: List (table), Board (Kanban), or Analytics; preference stored in `localStorage`.
+
+**Tasks**
+- Create task ("New Task" → form); edit task (open form or inline: title, assignee, due date, priority); delete task (with confirmation).
+- Board: drag-and-drop task between columns (To Do / In Progress / Done); status updated on drop.
+- Filter and sort tasks (assignee, priority; sort by title, status, priority, assignee, due date, size).
+- Add and view comments on a task (in task form); project-level comment list in Analytics view.
+
+**My Tasks**
+- View tasks assigned to current user across projects; filter by project, status, priority; open/edit/delete same as dashboard.
+
+**Project settings**
+- Edit project: name, description, color, dates, owner, sprint duration, task size unit, visible board columns, visibility (who can see project).
+- Delete project (danger zone; soft-deletes project and its tasks/sprints).
+
+**Sprints**
+- Create sprint (name, goal, start date); start sprint (planning → active; one active per project); complete sprint.
+
+**UI / global**
+- Toggle dark/light theme (user menu); responsive layout (desktop, tablet, mobile).
+- With realtime server: board subscribes to project/sprint; task create/update/delete broadcast to other viewers.
+
+## Trade-offs and assumptions
+
+**Trade-offs**
+
+| Area | Choice | Trade-off |
+|------|--------|-----------|
+| **Data store** | InMemory (dev) / SQL Server (prod) / optional MongoDB | Single backend supports multiple stores; schema and query patterns are tuned for relational use. Using MongoDB or InMemory means some SQL-specific features (e.g. rich migrations) are not used the same way. |
+| **Realtime** | Optional Socket.IO server | Keeps the main API stateless and simple; realtime is best-effort and not required for core CRUD. Adds an extra process and configuration to run. |
+| **Auth** | JWT in app; optional Azure AD for SQL | JWT is simple for SPA + API; no built-in refresh tokens or session revocation. Production SQL can use Azure AD RBAC instead of connection strings. |
+| **Soft deletes** | `IsDeleted` on entities | Keeps history and referential integrity without hard deletes; list and board queries must filter deleted rows. |
+| **Frontend** | SPA (Vue) with REST + optional WebSocket | Fast UX and clear separation from API; SEO and first-load are secondary to app-like experience. |
+
+**Assumptions**
+
+- **Audience:** Small to medium teams; single-tenant or simple multi-tenant usage. No built-in org/workspace hierarchy or SSO.
+- **Scale:** Read/write volume and board concurrency are modest. InMemory is for dev only; production assumes a persistent store (SQL or Mongo) and a single API instance unless you add load balancing yourself.
+- **Environment:** Backend expects config via appsettings or env vars (e.g. `Jwt__Key`, `ConnectionStrings__SqlDb`, `Realtime__ServerUrl`). Frontend expects `VITE_API_BASE` (and optionally `VITE_REALTIME_ENABLED` + `VITE_REALTIME_URL` for realtime).
+- **Browser:** Modern browsers with JavaScript enabled; no hard requirement for offline or legacy browsers.
 
 ---
 

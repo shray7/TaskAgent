@@ -14,7 +14,7 @@ From repo root:
 ```bash
 docker compose up --build api
 ```
-The API runs with `ASPNETCORE_ENVIRONMENT=Development`, so it loads `appsettings.Development.json` (JWT, Realtime, Logging, InMemory DB). It listens on **http://localhost:5001**.
+The API runs with `ASPNETCORE_ENVIRONMENT=Development`, so it loads `appsettings.Development.json` (JWT, Logging, InMemory DB). Realtime is **off by default** in Docker; set `REALTIME_SERVER_URL=http://realtime:3001` in `.env` and run with `--profile realtime` to enable.
 
 **Option B: Run locally**
 
@@ -43,9 +43,9 @@ With `VITE_API_BASE` set, the UI uses the real API (not mock mode). Log in – t
 
 ### Realtime (optional)
 
-- Backend: `Realtime:ServerUrl` is set in appsettings.Development.json.
-- Frontend: add `VITE_REALTIME_URL=http://localhost:3001` to `.env`.
-- Run: `cd Backend/realtime && npm run dev`.
+- **Docker:** Realtime is off by default. To enable: add `REALTIME_SERVER_URL=http://realtime:3001` to repo root `.env`, then `docker compose --profile realtime up --build`.
+- **Standalone:** `Realtime:ServerUrl` in appsettings.Development.json; run `cd Backend/realtime && npm run dev`.
+- Frontend: add `VITE_REALTIME_ENABLED=true` and `VITE_REALTIME_URL=http://localhost:3001` to `Frontend/.env`.
 
 ---
 

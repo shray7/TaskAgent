@@ -1,6 +1,10 @@
 # Run from repo root. UI runs locally (npm run dev); set Frontend/.env VITE_API_BASE=http://localhost:5001.
 # API only (InMemory):  docker compose up --build api
 # API + SQL/Mongo DBs: docker compose --profile databases up --build
+# API + Realtime:      docker compose --profile realtime up --build (set REALTIME_SERVER_URL in .env)
+#
+# Realtime is OFF by default. To enable: add REALTIME_SERVER_URL=http://realtime:3001 to .env
+# and run with --profile realtime. Frontend: set VITE_REALTIME_ENABLED=true and VITE_REALTIME_URL=http://localhost:3001.
 
 services:
   api:
@@ -11,19 +15,32 @@ services:
     ports:
       - "5001:8080"
     environment:
-      # Use appsettings.Development.json (JWT, Realtime, Logging, etc.)
+      # Use appsettings.Development.json (JWT, Logging, etc.)
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:8080
       - DataStore__Type=InMemory
       - DataStore__DatabaseName=TaskAgentDb
       # JWT key for login/register (min 32 chars); dev-only value for local container
       - Jwt__Key=dev-docker-jwt-key-at-least-32-characters-long
+      # Realtime: empty = disabled (default). Set via REALTIME_SERVER_URL in .env when using --profile realtime
+      - Realtime__ServerUrl=${REALTIME_SERVER_URL:-}
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8080/health/ready || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 3
       start_period: 15s
+
+  # Optional: run only when using realtime (--profile realtime); set REALTIME_SERVER_URL=http://realtime:3001 in .env
+  realtime:
+    build:
+      context: Backend/realtime
+      dockerfile: Dockerfile
+    container_name: taskagent-realtime
+    ports:
+      - "3001:3001"
+    profiles:
+      - realtime
 
   # Optional: run only when using SQL Server for local dev
   sqlserver:

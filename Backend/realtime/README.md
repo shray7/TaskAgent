@@ -14,7 +14,7 @@ Runs on port **3001** by default (`PORT` env to override).
 ## Configuration
 
 - **.NET API**: Set `Realtime:ServerUrl` (e.g. `http://localhost:3001`) in `appsettings.Development.json` so the API POSTs to this server on task changes.
-- **Vue**: Set `VITE_REALTIME_URL` (e.g. `http://localhost:3001`) so the app connects to this server when viewing the dashboard.
+- **Vue**: Set `VITE_REALTIME_ENABLED=true` and `VITE_REALTIME_URL` (e.g. `http://localhost:3001`) so the app connects to this server when viewing the dashboard.
 
 If either URL is unset, real-time is disabled (board still works without live updates).
 
