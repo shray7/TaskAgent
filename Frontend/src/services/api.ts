@@ -87,7 +87,21 @@ export function normalizeTaskFromPayload(t: Record<string, unknown>): Task {
   return normalizeTask(t)
 }
 
-// --- HTTP client (with correlation ID and request logging) ---
+// --- JWT token (set by auth store so API can attach Bearer token to requests) ---
+
+let tokenGetter: (() => string | null) | null = null
+
+/** Set the function that returns the current JWT. Called by the auth store so requests include Authorization: Bearer <token>. */
+export function setTokenGetter(getter: () => string | null): void {
+  tokenGetter = getter
+}
+
+let onUnauthorized: (() => void) | null = null
+
+/** Set callback when API returns 401 (e.g. token expired). Typically clear auth store so user is sent to login. */
+export function setUnauthorizedCallback(callback: () => void): void {
+  onUnauthorized = callback
+}
 
 /** Parse error message from API error body (e.g. { message: string }) or fallback to statusText. */
 async function getErrorMessage(res: Response): Promise<string> {
@@ -109,6 +123,10 @@ async function getErrorMessage(res: Response): Promise<string> {
 async function fetchWithLogging(url: string, init?: RequestInit): Promise<Response> {
   const method = init?.method ?? 'GET'
   const headers = { ...getCorrelationIdHeader(), 'Content-Type': 'application/json', ...init?.headers } as Record<string, string>
+  const token = tokenGetter?.() ?? null
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`
+  }
   const start = performance.now()
   logger.debug('API request', { method, url })
   try {
@@ -131,6 +149,9 @@ async function fetchWithLogging(url: string, init?: RequestInit): Promise<Respon
 async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetchWithLogging(`${baseUrl}${path}`, init)
   if (!res.ok) {
+    if (res.status === 401) {
+      onUnauthorized?.()
+    }
     const message = await getErrorMessage(res)
     throw new Error(message)
   }
@@ -401,11 +422,12 @@ function setMock(data: Partial<typeof mockData>): void {
 
 // --- Public API ---
 
-// Auth response type
+// Auth response type (token returned on successful login/register for JWT)
 interface AuthResponse {
   success: boolean
   message?: string
   user?: User
+  token?: string
 }
 
 export const api = {
@@ -425,24 +447,27 @@ export const api = {
           if (!res.ok) {
             return { success: false, message: data.message || 'Login failed' }
           }
+          const rawUser = data.user ?? data.User
+          const rawToken = data.token ?? data.Token
           return {
             success: data.success,
-            message: data.message,
-            user: data.user ? {
-              id: data.user.id,
-              name: data.user.name,
-              email: data.user.email,
-              avatar: data.user.avatar
-            } : undefined
+            message: data.message ?? data.Message,
+            user: rawUser ? {
+              id: rawUser.id,
+              name: rawUser.name,
+              email: rawUser.email,
+              avatar: rawUser.avatar ?? ''
+            } : undefined,
+            token: rawToken ?? null
           }
         } catch {
           return { success: false, message: 'Login failed. Please try again.' }
         }
       }
-      // Mock login - accept any password for demo users
+      // Mock login - accept any password for demo users; include fake token so isAuthenticated is true
       const user = getMock().users.find(u => u.email === email)
       if (user) {
-        return { success: true, message: 'Login successful', user: { ...user } }
+        return { success: true, message: 'Login successful', user: { ...user }, token: 'mock-jwt' }
       }
       return { success: false, message: 'Invalid email or password' }
     },
@@ -466,7 +491,8 @@ export const api = {
               name: data.user.name,
               email: data.user.email,
               avatar: data.user.avatar
-            } : undefined
+            } : undefined,
+            token: data.token
           }
         } catch {
           return { success: false, message: 'Registration failed. Please try again.' }

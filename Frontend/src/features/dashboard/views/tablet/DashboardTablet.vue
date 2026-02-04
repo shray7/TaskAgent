@@ -18,25 +18,60 @@
           </div>
         </div>
         <div class="header-right">
-          <button class="btn btn-primary btn-sm" @click="showTaskForm = true">
+          <button v-if="currentProject" class="btn btn-primary btn-sm" @click="showTaskForm = true">
             <Plus class="btn-icon" />
             New Task
           </button>
-          <ThemeToggle class="header-theme-toggle" />
-          <div class="user-pill">
-            <span class="user-avatar" :style="authStore.user ? { backgroundColor: getUserColor(authStore.user.id), color: '#fff' } : {}">
-              {{ authStore.user ? getInitials(authStore.user) : '' }}
-            </span>
-            <span class="user-name">{{ authStore.user?.name }}</span>
+          <div class="user-menu" ref="userMenuRef">
+            <button
+              type="button"
+              class="user-pill user-menu-trigger"
+              @click="toggleUserMenu"
+              :aria-expanded="userMenuOpen"
+              aria-haspopup="menu"
+            >
+              <span class="user-avatar" :style="authStore.user ? { backgroundColor: getUserColor(authStore.user.id), color: '#fff' } : {}">
+                {{ authStore.user ? getInitials(authStore.user) : '' }}
+              </span>
+              <span class="user-name">{{ authStore.user?.name }}</span>
+              <ChevronDown class="user-menu-caret" />
+            </button>
+            <transition name="menu-fade">
+              <div
+                v-if="userMenuOpen"
+                class="user-menu-dropdown"
+                role="menu"
+              >
+                <button type="button" class="user-menu-item" @click="handleThemeToggle">
+                  <Sun v-if="themeStore.theme === 'light'" class="menu-icon" />
+                  <Moon v-else class="menu-icon" />
+                  <span>Switch to {{ themeStore.theme === 'light' ? 'Dark' : 'Light' }} mode</span>
+                </button>
+                <button type="button" class="user-menu-item" @click="handleLogoutClick">
+                  <LogOut class="menu-icon" />
+                  <span>Log out</span>
+                </button>
+              </div>
+            </transition>
           </div>
-          <button class="header-btn" title="Logout" @click="handleLogout">
-            <LogOut class="btn-icon" />
-          </button>
         </div>
       </div>
     </header>
 
     <main class="main-content">
+      <div v-if="projectsStore.loaded && !currentProject" class="empty-state card animate-fade-in">
+        <div class="empty-state-icon">
+          <CheckSquare class="empty-icon" />
+        </div>
+        <h2 class="empty-state-title">Create your first project</h2>
+        <p class="empty-state-text">You don't have any projects yet. Create a project to start organizing tasks, sprints, and team collaboration.</p>
+        <button @click="projectsStore.openCreateProjectForm = true" class="btn btn-primary">
+          <Plus class="btn-icon" />
+          Create Project
+        </button>
+      </div>
+
+      <template v-else>
       <div class="stats-grid stats-grid-tablet">
         <div v-for="col in visibleColumnConfigs" :key="col.status" class="stat-card card">
           <div class="stat-content">
@@ -178,6 +213,7 @@
       <section v-if="viewMode === 'analytics' && currentProject && authStore.user" class="dashboard-comments-section card">
         <CommentList :project-id="currentProject.id" :author-id="authStore.user.id" />
       </section>
+      </template>
     </main>
 
     <Teleport to="body">
@@ -201,14 +237,15 @@
 </template>
 
 <script setup lang="ts">
-import { Plus, List, Columns3, BarChart2, LogOut, Users } from 'lucide-vue-next'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { Plus, List, Columns3, BarChart2, LogOut, Users, CheckSquare, ChevronDown, Sun, Moon } from 'lucide-vue-next'
 import { useDashboard } from '../../composables/useDashboard'
 import HamburgerNav from '@/components/layout/HamburgerNav.vue'
-import ThemeToggle from '@/components/ui/ThemeToggle.vue'
 import TaskCard from '../../components/TaskCard.vue'
 import TaskForm from '../../components/TaskForm.vue'
 import CommentList from '../../components/CommentList.vue'
 import AnalyticsTablet from '@/features/analytics/components/AnalyticsTablet.vue'
+import { useThemeStore } from '@/stores/theme'
 
 const d = useDashboard()
 const {
@@ -223,6 +260,53 @@ const {
   handleDragStart, handleDragEnd, handleDragOver, handleDragLeave, handleDrop,
   handleEditTask, handleTaskSubmit, handleDeleteTaskFromForm, closeTaskForm
 } = d
+
+const themeStore = useThemeStore()
+
+const userMenuOpen = ref(false)
+const userMenuRef = ref<HTMLElement | null>(null)
+
+const toggleUserMenu = () => {
+  userMenuOpen.value = !userMenuOpen.value
+}
+
+const closeUserMenu = () => {
+  userMenuOpen.value = false
+}
+
+const handleThemeToggle = () => {
+  themeStore.toggleTheme()
+  closeUserMenu()
+}
+
+const handleLogoutClick = () => {
+  closeUserMenu()
+  handleLogout()
+}
+
+const handleDocumentClick = (event: MouseEvent) => {
+  const target = event.target as Node | null
+  if (!userMenuRef.value || !target) return
+  if (!userMenuRef.value.contains(target)) {
+    userMenuOpen.value = false
+  }
+}
+
+const handleEscapeKey = (event: KeyboardEvent) => {
+  if (event.key === 'Escape') {
+    closeUserMenu()
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('click', handleDocumentClick)
+  document.addEventListener('keydown', handleEscapeKey)
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleDocumentClick)
+  document.removeEventListener('keydown', handleEscapeKey)
+})
 </script>
 
 <style scoped>
@@ -249,6 +333,125 @@ const {
   min-width: 0;
 }
 
+.dashboard-tablet .user-menu {
+  position: relative;
+}
+
+.dashboard-tablet .user-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0.75rem 0.375rem 0.375rem;
+  background-color: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 9999px;
+}
+
+.dashboard-tablet .user-menu-trigger {
+  color: var(--header-text);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.dashboard-tablet .user-menu-trigger:hover,
+.dashboard-tablet .user-menu-trigger:focus-visible {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.dashboard-tablet .user-menu-trigger:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.35);
+  outline-offset: 2px;
+}
+
+.dashboard-tablet .user-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+  height: 2rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1;
+  background-color: var(--bg-tertiary);
+  color: var(--text-secondary);
+  border-radius: 0.375rem;
+}
+
+.dashboard-tablet .user-name {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--header-text);
+}
+
+.dashboard-tablet .user-menu-caret {
+  width: 0.75rem;
+  height: 0.75rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.dashboard-tablet .user-menu-dropdown {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  min-width: 12rem;
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-primary);
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  box-shadow: 0 20px 40px -24px rgba(15, 23, 42, 0.45);
+  z-index: 50;
+}
+
+.dashboard-tablet .user-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.dashboard-tablet .user-menu-item:hover {
+  background-color: var(--bg-hover);
+}
+
+.dashboard-tablet .user-menu-item:focus-visible {
+  outline: 2px solid var(--btn-primary-bg);
+  outline-offset: 2px;
+}
+
+.dashboard-tablet .menu-icon {
+  width: 1rem;
+  height: 1rem;
+  color: var(--text-secondary);
+}
+
+.dashboard-tablet .user-menu-item:hover .menu-icon {
+  color: var(--btn-primary-bg);
+}
+
+.dashboard-tablet .menu-fade-enter-active,
+.dashboard-tablet .menu-fade-leave-active {
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.dashboard-tablet .menu-fade-enter-from,
+.dashboard-tablet .menu-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
+}
+
 .dashboard-tablet .header-divider {
   margin: 0 0.5rem;
 }
@@ -264,8 +467,80 @@ const {
 
 .dashboard-tablet .stats-grid-tablet {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.25rem;
+  align-items: stretch;
+}
+
+.dashboard-tablet .stats-grid-tablet .stat-card {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  padding: 1.25rem 1.5rem;
+  border-radius: 1.25rem;
+  background: linear-gradient(135deg, var(--bg-tertiary), var(--bg-secondary));
+  border: 1px solid var(--border-primary);
+  box-shadow: 0 16px 30px -18px rgba(15, 23, 42, 0.3);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.dashboard-tablet .stats-grid-tablet .stat-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at top right, rgba(255, 255, 255, 0.16), transparent 58%);
+  opacity: 0.65;
+  pointer-events: none;
+}
+
+.dashboard-tablet .stats-grid-tablet .stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 22px 40px -20px rgba(15, 23, 42, 0.35);
+}
+
+.dashboard-tablet .stats-grid-tablet .stat-content {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dashboard-tablet .stats-grid-tablet .icon-container {
+  width: 3rem;
+  height: 3rem;
+  padding: 0.75rem;
+  border-radius: 1rem;
+  box-shadow: 0 12px 22px -12px rgba(15, 23, 42, 0.35);
+}
+
+.dashboard-tablet .stats-grid-tablet .stat-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.dashboard-tablet .stats-grid-tablet .stat-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.25rem;
+  text-align: right;
+}
+
+.dashboard-tablet .stats-grid-tablet .stat-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: var(--text-primary);
+}
+
+.dashboard-tablet .stats-grid-tablet .stat-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-tertiary);
 }
 
 .task-columns.view-columns {

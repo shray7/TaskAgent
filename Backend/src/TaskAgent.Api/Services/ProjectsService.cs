@@ -13,21 +13,23 @@ public class ProjectsService : IProjectsService
 
     public ProjectsService(AppDbContext db) => _db = db;
 
-    public async Task<IEnumerable<ProjectDto>> GetAllAsync(CancellationToken ct = default)
+    public async Task<IEnumerable<ProjectDto>> GetAllAsync(int currentUserId, CancellationToken ct = default)
     {
         var list = await _db.Projects
             .Include(p => p.Owner)
             .Where(p => p.DeletedAt == null)
             .ToListAsync(ct);
-        return list.Select(Map);
+        var filtered = list.Where(p => CanUserAccessProject(p, currentUserId));
+        return filtered.Select(Map);
     }
 
-    public async Task<ProjectDto?> GetByIdAsync(int id, CancellationToken ct = default)
+    public async Task<ProjectDto?> GetByIdAsync(int id, int currentUserId, CancellationToken ct = default)
     {
         var p = await _db.Projects
             .Include(x => x.Owner)
             .FirstOrDefaultAsync(x => x.Id == id && x.DeletedAt == null, ct);
-        return p == null ? null : Map(p);
+        if (p == null || !CanUserAccessProject(p, currentUserId)) return null;
+        return Map(p);
     }
 
     public async Task<(ProjectDto? Dto, string? Error)> CreateAsync(CreateProjectRequest req, CancellationToken ct = default)
@@ -121,6 +123,13 @@ public class ProjectsService : IProjectsService
 
         await _db.SaveChangesAsync(ct);
         return 2;
+    }
+
+    private static bool CanUserAccessProject(ProjectEntity p, int userId)
+    {
+        if (p.OwnerId == userId) return true;
+        var visible = ParseIntArray(p.VisibleToUserIdsJson);
+        return visible != null && visible.Contains(userId);
     }
 
     private static ProjectDto Map(ProjectEntity p) => new(

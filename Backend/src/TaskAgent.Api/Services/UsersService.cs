@@ -9,11 +9,13 @@ public class UsersService : IUsersService
 {
     private readonly AppDbContext _db;
     private readonly IPasswordHasher _passwordHasher;
+    private readonly IJwtTokenService _jwt;
 
-    public UsersService(AppDbContext db, IPasswordHasher passwordHasher)
+    public UsersService(AppDbContext db, IPasswordHasher passwordHasher, IJwtTokenService jwt)
     {
         _db = db;
         _passwordHasher = passwordHasher;
+        _jwt = jwt;
     }
 
     public async Task<IEnumerable<AppUserDto>> GetAllAsync(CancellationToken ct = default)
@@ -38,7 +40,7 @@ public class UsersService : IUsersService
     {
         var existingUser = await _db.AppUsers.FirstOrDefaultAsync(u => u.Email == request.Email, ct);
         if (existingUser != null)
-            return new AuthResponse(false, "Email already registered", null);
+            return new AuthResponse(false, "Email already registered", null, null);
 
         var avatars = new[] { "👩‍💼", "👨‍💻", "👩‍🎨", "👨‍🔬", "👩‍🏫", "👨‍🎤", "👩‍⚕️", "👨‍🍳" };
         var avatar = avatars[Math.Abs(request.Name.GetHashCode()) % avatars.Length];
@@ -55,7 +57,9 @@ public class UsersService : IUsersService
         _db.AppUsers.Add(user);
         await _db.SaveChangesAsync(ct);
 
-        return new AuthResponse(true, "Registration successful", Map(user));
+        var dto = Map(user);
+        var token = _jwt.GenerateToken(user.Id, user.Email);
+        return new AuthResponse(true, "Registration successful", dto, token);
     }
 
     public async Task<AuthResponse> LoginAsync(LoginRequest request, CancellationToken ct = default)
@@ -65,15 +69,19 @@ public class UsersService : IUsersService
             ct);
 
         if (user == null)
-            return new AuthResponse(false, "Invalid email or password", null);
+            return new AuthResponse(false, "Invalid email or password", null, null);
 
         if (string.IsNullOrEmpty(user.PasswordHash))
-            return new AuthResponse(true, "Login successful", Map(user));
+        {
+            var dto = Map(user);
+            return new AuthResponse(true, "Login successful", dto, _jwt.GenerateToken(user.Id, user.Email));
+        }
 
         if (!_passwordHasher.VerifyPassword(request.Password, user.PasswordHash))
-            return new AuthResponse(false, "Invalid email or password", null);
+            return new AuthResponse(false, "Invalid email or password", null, null);
 
-        return new AuthResponse(true, "Login successful", Map(user));
+        var mapped = Map(user);
+        return new AuthResponse(true, "Login successful", mapped, _jwt.GenerateToken(user.Id, user.Email));
     }
 
     private static AppUserDto Map(AppUser u) => new(u.Id, u.Name, u.Email, u.Avatar);

@@ -7,10 +7,11 @@ export const useAuthStore = defineStore(
   'auth',
   () => {
     const user = ref<User | null>(null)
+    const token = ref<string | null>(null)
     const users = ref<User[]>([])
     const usersLoaded = ref(false)
 
-    const isAuthenticated = computed(() => !!user.value)
+    const isAuthenticated = computed(() => !!user.value && !!token.value)
 
     async function loadUsers(): Promise<void> {
       if (usersLoaded.value) return
@@ -26,9 +27,8 @@ export const useAuthStore = defineStore(
       const result = await api.auth.login(email, password)
       if (result.success && result.user) {
         user.value = result.user
-        // Reload users list to include the logged-in user
+        token.value = result.token ?? null
         usersLoaded.value = false
-        await loadUsers()
       }
       return { success: result.success, message: result.message }
     }
@@ -37,19 +37,20 @@ export const useAuthStore = defineStore(
       const result = await api.auth.register(email, name, password)
       if (result.success && result.user) {
         user.value = result.user
-        // Reload users list to include the new user
+        token.value = result.token ?? null
         usersLoaded.value = false
-        await loadUsers()
       }
       return { success: result.success, message: result.message }
     }
 
     function logout(): void {
       user.value = null
+      token.value = null
     }
 
     return {
       user,
+      token,
       users,
       usersLoaded,
       isAuthenticated,
@@ -60,6 +61,6 @@ export const useAuthStore = defineStore(
     }
   },
   {
-    persist: { paths: ['user'] }
+    persist: { paths: ['user', 'token'] }
   }
 )

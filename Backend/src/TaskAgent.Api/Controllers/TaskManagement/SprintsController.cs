@@ -1,3 +1,5 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TaskAgent.Api.Services;
 using TaskAgent.Contracts.Dtos;
@@ -7,23 +9,34 @@ namespace TaskAgent.Api.Controllers.TaskManagement;
 
 [ApiController]
 [Route("api/tm/[controller]")]
+[Authorize]
 public class SprintsController : ControllerBase
 {
     private readonly ISprintsService _sprints;
 
     public SprintsController(ISprintsService sprints) => _sprints = sprints;
 
+    private int? GetCurrentUserId()
+    {
+        var sub = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
+        return int.TryParse(sub, out var id) ? id : null;
+    }
+
     [HttpGet]
     public async Task<ActionResult<IEnumerable<SprintDto>>> GetAll([FromQuery] int? projectId, CancellationToken ct)
     {
-        var list = await _sprints.GetAllAsync(projectId, ct);
+        var userId = GetCurrentUserId();
+        if (userId == null) return Unauthorized(new ApiErrorDto("Invalid token."));
+        var list = await _sprints.GetAllAsync(userId.Value, projectId, ct);
         return Ok(list);
     }
 
     [HttpGet("{id:int}")]
     public async Task<ActionResult<SprintDto>> GetById(int id, CancellationToken ct)
     {
-        var s = await _sprints.GetByIdAsync(id, ct);
+        var userId = GetCurrentUserId();
+        if (userId == null) return Unauthorized(new ApiErrorDto("Invalid token."));
+        var s = await _sprints.GetByIdAsync(id, userId.Value, ct);
         if (s == null) return NotFound(new ApiErrorDto("Sprint not found"));
         return Ok(s);
     }

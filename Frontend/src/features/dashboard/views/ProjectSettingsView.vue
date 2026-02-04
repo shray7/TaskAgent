@@ -12,7 +12,7 @@
 
     <main class="main-content settings-main" :class="{ 'main-with-bottom-nav': isMobile() }">
       <div v-if="!currentProject" class="card empty-state-card">
-        <p>No project selected.</p>
+        <p>{{ projectsStore.projects.length === 0 ? "You don't have any projects yet. Create your first project to get started." : "No project selected." }}</p>
         <router-link to="/dashboard" class="btn btn-primary">Go to Dashboard</router-link>
       </div>
 

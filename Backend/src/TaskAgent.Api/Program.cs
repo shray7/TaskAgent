@@ -1,11 +1,15 @@
+using System.Text;
 using System.Threading.RateLimiting;
 using FluentValidation;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using TaskAgent.Api.Filters;
 using TaskAgent.Api.Middleware;
+using TaskAgent.Api.Options;
 using TaskAgent.Api.Services;
 using TaskAgent.Api.Validators;
 using TaskAgent.Contracts.Dtos;
@@ -36,8 +40,27 @@ builder.Services.AddControllers(options =>
     options.Filters.Add<ValidationActionFilter>();
 });
 
-// Add password hasher for secure authentication
+// Add password hasher and JWT token service for authentication
 builder.Services.AddSingleton<IPasswordHasher, PasswordHasher>();
+builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
+builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
+
+// JWT Bearer authentication
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        var jwt = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>() ?? new JwtOptions();
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwt.Issuer,
+            ValidAudience = jwt.Audience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.Key ?? ""))
+        };
+    });
 
 // Add data access layer (EF Core InMemory)
 builder.Services.AddDataAccess(builder.Configuration);
@@ -142,6 +165,8 @@ app.UseSwaggerUI(options =>
 });
 
 app.UseCors();
+app.UseAuthentication();
+app.UseAuthorization();
 app.UseHttpsRedirection();
 app.UseRateLimiter();
 app.MapControllers();

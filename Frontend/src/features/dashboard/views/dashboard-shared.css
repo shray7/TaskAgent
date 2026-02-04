@@ -221,6 +221,40 @@
   border: 1px dashed var(--border-primary);
 }
 
+.dashboard .empty-state.card {
+  max-width: 28rem;
+  margin: 3rem auto;
+  padding: 3rem 2rem;
+  text-align: center;
+  gap: 1rem;
+}
+.dashboard .empty-state-icon {
+  width: 4rem;
+  height: 4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
+  border-radius: 1rem;
+}
+.dashboard .empty-state .empty-icon {
+  width: 2rem;
+  height: 2rem;
+}
+.dashboard .empty-state-title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.dashboard .empty-state-text {
+  margin: 0;
+  font-size: 0.9375rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
 .dashboard .task-list { display: flex; flex-direction: column; gap: 0.75rem; }
 
 .dashboard .task-table-container { overflow-x: auto; padding: 0; }

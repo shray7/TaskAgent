@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TaskAgent.Api.Services;
 using TaskAgent.Contracts.Dtos;
@@ -6,6 +7,7 @@ namespace TaskAgent.Api.Controllers.TaskManagement;
 
 [ApiController]
 [Route("api/tm/[controller]")]
+[Authorize]
 public class UsersController : ControllerBase
 {
     private readonly IUsersService _users;
@@ -39,6 +41,7 @@ public class UsersController : ControllerBase
     }
 
     /// <summary>Register a new user with email and password</summary>
+    [AllowAnonymous]
     [HttpPost("register")]
     public async Task<ActionResult<AuthResponse>> Register([FromBody] RegisterRequest request, CancellationToken ct)
     {
@@ -49,6 +52,7 @@ public class UsersController : ControllerBase
     }
 
     /// <summary>Login with email and password</summary>
+    [AllowAnonymous]
     [HttpPost("login")]
     public async Task<ActionResult<AuthResponse>> Login([FromBody] LoginRequest request, CancellationToken ct)
     {

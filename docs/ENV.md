@@ -11,6 +11,10 @@ Configure via `appsettings.json`, `appsettings.{Environment}.json`, or environme
 | `ConnectionStrings__SqlDb` | SQL Server connection string. | `Server=localhost;Database=TaskAgent;User Id=sa;Password=...;TrustServerCertificate=True` |
 | `Cors__AllowedOrigins` | Allowed CORS origins (semicolon- or comma-separated). Localhost is always allowed. | `https://youruser.github.io` |
 | `Realtime__ServerUrl` | Base URL of the Socket.IO realtime server. If empty, real-time board updates are disabled. | `http://localhost:3001` |
+| `Jwt__Key` | Secret key for signing JWT tokens (min 32 characters). Set via env in production; never commit real secrets. | (use env var or Key Vault) |
+| `Jwt__Issuer` | JWT issuer claim. | `TaskAgent.Api` |
+| `Jwt__Audience` | JWT audience claim. | `TaskAgent.App` |
+| `Jwt__ExpirationMinutes` | Token lifetime in minutes. | `1440` (24h) |
 
 ## Frontend (Vue)
 

@@ -9,11 +9,24 @@
       </div>
     </header>
 
-    <button class="fab-new-task" aria-label="New task" @click="showTaskForm = true">
+    <button v-if="currentProject" class="fab-new-task" aria-label="New task" @click="showTaskForm = true">
       <Plus class="fab-icon" />
       <span class="fab-label">New</span>
     </button>
     <main class="main-content main-with-bottom-nav">
+      <div v-if="projectsStore.loaded && !currentProject" class="empty-state card animate-fade-in">
+        <div class="empty-state-icon">
+          <CheckSquare class="empty-icon" />
+        </div>
+        <h2 class="empty-state-title">Create your first project</h2>
+        <p class="empty-state-text">You don't have any projects yet. Create a project to start organizing tasks, sprints, and team collaboration.</p>
+        <button @click="projectsStore.openCreateProjectForm = true" class="btn btn-primary">
+          <Plus class="btn-icon" />
+          Create Project
+        </button>
+      </div>
+
+      <template v-else>
       <div class="view-tabs">
         <button :class="['tab', { active: viewMode === 'list' }]" @click="viewMode = 'list'">List</button>
         <button :class="['tab', { active: viewMode === 'columns' }]" @click="viewMode = 'columns'">Board</button>
@@ -139,6 +152,7 @@
           </div>
         </div>
       </section>
+      </template>
     </main>
 
     <TaskForm v-if="showTaskForm" :task="editingTask" @close="closeTaskForm" @submit="handleTaskSubmit" @delete="handleDeleteTaskFromForm" />
@@ -148,7 +162,7 @@
 
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import { Plus, Users } from 'lucide-vue-next'
+import { Plus, Users, CheckSquare } from 'lucide-vue-next'
 import { useDashboard } from '../../composables/useDashboard'
 import ProjectSelector from '@/components/layout/ProjectSelector.vue'
 import SprintSelector from '@/components/layout/SprintSelector.vue'

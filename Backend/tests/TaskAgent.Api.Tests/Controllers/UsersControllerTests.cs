@@ -76,7 +76,7 @@ public class UsersControllerTests
     public async Task Register_WhenSuccess_ReturnsOk()
     {
         var req = new RegisterRequest("u@example.com", "User", "password123");
-        var response = new AuthResponse(true, null, new AppUserDto(1, "User", "u@example.com", ""));
+        var response = new AuthResponse(true, null, new AppUserDto(1, "User", "u@example.com", ""), "fake-jwt");
         _usersMock.Setup(s => s.RegisterAsync(req, It.IsAny<CancellationToken>())).ReturnsAsync(response);
         var controller = CreateController(_usersMock.Object);
 
@@ -89,7 +89,7 @@ public class UsersControllerTests
     public async Task Register_WhenFails_ReturnsBadRequest()
     {
         var req = new RegisterRequest("u@example.com", "User", "short");
-        var response = new AuthResponse(false, "Password must be at least 8 characters", null);
+        var response = new AuthResponse(false, "Password must be at least 8 characters", null, null);
         _usersMock.Setup(s => s.RegisterAsync(req, It.IsAny<CancellationToken>())).ReturnsAsync(response);
         var controller = CreateController(_usersMock.Object);
 
@@ -102,7 +102,7 @@ public class UsersControllerTests
     public async Task Login_WhenSuccess_ReturnsOk()
     {
         var req = new LoginRequest("u@example.com", "password");
-        var response = new AuthResponse(true, null, new AppUserDto(1, "User", "u@example.com", ""));
+        var response = new AuthResponse(true, null, new AppUserDto(1, "User", "u@example.com", ""), "fake-jwt");
         _usersMock.Setup(s => s.LoginAsync(req, It.IsAny<CancellationToken>())).ReturnsAsync(response);
         var controller = CreateController(_usersMock.Object);
 
@@ -115,7 +115,7 @@ public class UsersControllerTests
     public async Task Login_WhenFails_ReturnsUnauthorized()
     {
         var req = new LoginRequest("u@example.com", "wrong");
-        var response = new AuthResponse(false, "Invalid credentials", null);
+        var response = new AuthResponse(false, "Invalid credentials", null, null);
         _usersMock.Setup(s => s.LoginAsync(req, It.IsAny<CancellationToken>())).ReturnsAsync(response);
         var controller = CreateController(_usersMock.Object);
 

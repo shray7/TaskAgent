@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
@@ -11,12 +12,17 @@ namespace TaskAgent.Api.Tests.Controllers;
 
 public class TasksControllerTests
 {
+    private const int TestUserId = 1;
+
     private readonly Mock<ITasksService> _tasksMock = new();
     private readonly Mock<IBoardRealtimeNotifier> _realtimeMock = new();
 
-    private static TasksController CreateController(ITasksService? tasks = null, IBoardRealtimeNotifier? realtime = null)
+    private static TasksController CreateController(ITasksService tasks, IBoardRealtimeNotifier realtime, int userId = TestUserId)
     {
-        return new TasksController(tasks!, realtime!);
+        var controller = new TasksController(tasks, realtime);
+        var identity = new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, userId.ToString()), new Claim("sub", userId.ToString())], "Test");
+        controller.ControllerContext = new ControllerContext { HttpContext = new Microsoft.AspNetCore.Http.DefaultHttpContext { User = new ClaimsPrincipal(identity) } };
+        return controller;
     }
 
     [Fact]
@@ -26,7 +32,7 @@ public class TasksControllerTests
         {
             new(1, "T1", "", "todo", "medium", 1, 1, DateTime.UtcNow, null, [], 1, null, null)
         };
-        _tasksMock.Setup(s => s.GetAllAsync(null, null, null, It.IsAny<CancellationToken>()))
+        _tasksMock.Setup(s => s.GetAllAsync(TestUserId, null, null, null, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expected);
         var controller = CreateController(_tasksMock.Object, _realtimeMock.Object);
 
@@ -40,7 +46,7 @@ public class TasksControllerTests
     public async Task GetById_WhenFound_ReturnsOk()
     {
         var dto = new TaskItemDto(1, "T1", "", "todo", "medium", 1, 1, DateTime.UtcNow, null, [], 1, null, null);
-        _tasksMock.Setup(s => s.GetByIdAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(dto);
+        _tasksMock.Setup(s => s.GetByIdAsync(1, TestUserId, It.IsAny<CancellationToken>())).ReturnsAsync(dto);
         var controller = CreateController(_tasksMock.Object, _realtimeMock.Object);
 
         var result = await controller.GetById(1, default);
@@ -51,7 +57,7 @@ public class TasksControllerTests
     [Fact]
     public async Task GetById_WhenNotFound_ReturnsNotFound()
     {
-        _tasksMock.Setup(s => s.GetByIdAsync(999, It.IsAny<CancellationToken>())).ReturnsAsync((TaskItemDto?)null);
+        _tasksMock.Setup(s => s.GetByIdAsync(999, TestUserId, It.IsAny<CancellationToken>())).ReturnsAsync((TaskItemDto?)null);
         var controller = CreateController(_tasksMock.Object, _realtimeMock.Object);
 
         var result = await controller.GetById(999, default);
@@ -65,7 +71,7 @@ public class TasksControllerTests
     {
         var req = new CreateTaskRequest("New", null, null, null, 1, 1, 1, null, null, null, null);
         var dto = new TaskItemDto(1, "New", "", "todo", "medium", 1, 1, DateTime.UtcNow, null, [], 1, null, null);
-        _tasksMock.Setup(s => s.CreateAsync(req, It.IsAny<CancellationToken>())).ReturnsAsync((dto, (string?)null));
+        _tasksMock.Setup(s => s.CreateAsync(req, TestUserId, It.IsAny<CancellationToken>())).ReturnsAsync((dto, (string?)null));
         var controller = CreateController(_tasksMock.Object, _realtimeMock.Object);
 
         var result = await controller.Create(req, default);
@@ -75,16 +81,28 @@ public class TasksControllerTests
     }
 
     [Fact]
-    public async Task Create_WhenError_ReturnsBadRequest()
+    public async Task Create_WhenProjectNotFound_ReturnsNotFound()
     {
         var req = new CreateTaskRequest("New", null, null, null, 1, 1, 1, null, null, null, null);
-        _tasksMock.Setup(s => s.CreateAsync(req, It.IsAny<CancellationToken>())).ReturnsAsync((null, "Project not found"));
+        _tasksMock.Setup(s => s.CreateAsync(req, TestUserId, It.IsAny<CancellationToken>())).ReturnsAsync((null, "Project not found"));
         var controller = CreateController(_tasksMock.Object, _realtimeMock.Object);
 
         var result = await controller.Create(req, default);
 
-        var badRequest = result.Result.Should().BeOfType<BadRequestObjectResult>().Subject;
-        badRequest.Value.Should().BeEquivalentTo(new ApiErrorDto("Project not found"));
+        result.Result.Should().BeOfType<NotFoundObjectResult>().Which.Value.Should().BeEquivalentTo(new ApiErrorDto("Project not found"));
+        _realtimeMock.Verify(r => r.NotifyTaskCreatedAsync(It.IsAny<TaskItemDto>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Create_WhenAccessDenied_Returns403()
+    {
+        var req = new CreateTaskRequest("New", null, null, null, 1, 1, 1, null, null, null, null);
+        _tasksMock.Setup(s => s.CreateAsync(req, TestUserId, It.IsAny<CancellationToken>())).ReturnsAsync((null, "You do not have access to this project."));
+        var controller = CreateController(_tasksMock.Object, _realtimeMock.Object);
+
+        var result = await controller.Create(req, default);
+
+        result.Result.Should().BeOfType<ObjectResult>().Which.StatusCode.Should().Be(403);
         _realtimeMock.Verify(r => r.NotifyTaskCreatedAsync(It.IsAny<TaskItemDto>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -93,7 +111,7 @@ public class TasksControllerTests
     {
         var req = new UpdateTaskRequest("Updated", null, null, null, null, null, null, null, null);
         var dto = new TaskItemDto(1, "Updated", "", "todo", "medium", 1, 1, DateTime.UtcNow, null, [], 1, null, null);
-        _tasksMock.Setup(s => s.UpdateAsync(1, req, It.IsAny<CancellationToken>())).ReturnsAsync((dto, (string?)null));
+        _tasksMock.Setup(s => s.UpdateAsync(1, req, TestUserId, It.IsAny<CancellationToken>())).ReturnsAsync((dto, (string?)null));
         var controller = CreateController(_tasksMock.Object, _realtimeMock.Object);
 
         var result = await controller.Update(1, req, default);
@@ -105,7 +123,7 @@ public class TasksControllerTests
     public async Task Update_WhenNotFound_ReturnsNotFound()
     {
         var req = new UpdateTaskRequest("Updated", null, null, null, null, null, null, null, null);
-        _tasksMock.Setup(s => s.UpdateAsync(999, req, It.IsAny<CancellationToken>())).ReturnsAsync((null, "Not found"));
+        _tasksMock.Setup(s => s.UpdateAsync(999, req, TestUserId, It.IsAny<CancellationToken>())).ReturnsAsync((null, "Not found"));
         var controller = CreateController(_tasksMock.Object, _realtimeMock.Object);
 
         var result = await controller.Update(999, req, default);
@@ -117,8 +135,8 @@ public class TasksControllerTests
     public async Task Delete_WhenFound_ReturnsNoContent()
     {
         var existing = new TaskItemDto(1, "T", "", "todo", "medium", 1, 1, DateTime.UtcNow, null, [], 1, null, null);
-        _tasksMock.Setup(s => s.GetByIdAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(existing);
-        _tasksMock.Setup(s => s.DeleteAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        _tasksMock.Setup(s => s.GetByIdAsync(1, TestUserId, It.IsAny<CancellationToken>())).ReturnsAsync(existing);
+        _tasksMock.Setup(s => s.DeleteAsync(1, TestUserId, It.IsAny<CancellationToken>())).ReturnsAsync((true, (string?)null));
         var controller = CreateController(_tasksMock.Object, _realtimeMock.Object);
 
         var result = await controller.Delete(1, default);
@@ -130,7 +148,7 @@ public class TasksControllerTests
     [Fact]
     public async Task Delete_WhenNotFound_ReturnsNotFound()
     {
-        _tasksMock.Setup(s => s.GetByIdAsync(999, It.IsAny<CancellationToken>())).ReturnsAsync((TaskItemDto?)null);
+        _tasksMock.Setup(s => s.GetByIdAsync(999, TestUserId, It.IsAny<CancellationToken>())).ReturnsAsync((TaskItemDto?)null);
         var controller = CreateController(_tasksMock.Object, _realtimeMock.Object);
 
         var result = await controller.Delete(999, default);

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TaskAgent.Api.Services;
 using TaskAgent.Contracts.Dtos;
@@ -7,6 +8,7 @@ namespace TaskAgent.Api.Controllers.TaskManagement;
 
 [ApiController]
 [Route("api/tm/[controller]")]
+[Authorize]
 public class CommentsController : ControllerBase
 {
     private readonly ICommentsService _comments;

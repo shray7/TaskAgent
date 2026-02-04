@@ -116,7 +116,20 @@ az containerapp update --name taskagent-api --resource-group rg-taskagent \
 
 ## Key Vault
 
-Secrets stored: `redis-connection-string`, `azure-storage-connection-string` (no SQL connection string)
+Secrets stored: `redis-connection-string`, `azure-storage-connection-string`, `TaskAgent-JwtKey` (no SQL connection string).
+
+### JWT signing key (for auth)
+
+The API uses a JWT signing key (`Jwt__Key`) so login/register can issue and validate tokens. You can:
+
+1. **Let `setup-azure.sh` create it** – The script generates a key and stores it in Key Vault as `TaskAgent-JwtKey`, then configures both Container Apps to use it via Key Vault reference (env `Jwt__Key=secretref:jwt-key`).
+
+2. **Create or rotate it later** – From repo root:
+   ```bash
+   chmod +x scripts/setup-jwt-keyvault.sh
+   CORS_ALLOWED_ORIGINS="https://youruser.github.io" ./scripts/setup-jwt-keyvault.sh
+   ```
+   This generates a new key, stores it in Key Vault, and wires both staging and production Container Apps to use it. Optional: set `RESOURCE_GROUP`, `KEYVAULT_NAME`, `APP_NAME` if different from defaults.
 
 ## Monitoring
 

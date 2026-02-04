@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace TaskAgent.Contracts.Dtos;
 
@@ -33,10 +34,11 @@ public record LoginRequest(
 );
 
 /// <summary>
-/// Response after successful authentication.
+/// Response after successful authentication. When Success is true, Token is set for JWT bearer auth.
 /// </summary>
 public record AuthResponse(
     bool Success,
     string? Message,
-    AppUserDto? User
+    AppUserDto? User,
+    [property: JsonPropertyName("token")] string? Token
 );

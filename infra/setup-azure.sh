@@ -238,6 +238,19 @@ else
   echo "  Redis already exists, skipping..."
 fi
 
+echo "Creating/updating JWT signing key in Key Vault..."
+JWT_KEY=$(openssl rand -base64 48 | tr -d '\n' 2>/dev/null || true)
+if [ -n "$JWT_KEY" ]; then
+  az keyvault secret set \
+    --vault-name $KEYVAULT_NAME \
+    --name "TaskAgent-JwtKey" \
+    --value "$JWT_KEY" \
+    --output none 2>/dev/null || true
+  echo "  Stored TaskAgent-JwtKey in Key Vault"
+else
+  echo "  Skipping JWT key (openssl not available or failed). Run scripts/setup-jwt-keyvault.sh later."
+fi
+
 echo "Creating service principal for GitHub Actions..."
 SP_APP_ID=""
 SP_OUTPUT=$(az ad sp create-for-rbac \
@@ -276,6 +289,13 @@ for APP in "$APP_NAME" "${APP_NAME}-staging"; do
       --secrets "azure-storage-connection-string=$STORAGE_CONN"
   fi
 
+  # JWT key from Key Vault (so app can sign/validate tokens)
+  KV_JWT_URI="https://${KEYVAULT_NAME}.vault.azure.net/secrets/TaskAgent-JwtKey"
+  if az keyvault secret show --vault-name $KEYVAULT_NAME --name "TaskAgent-JwtKey" &>/dev/null; then
+    az containerapp secret set --name $APP --resource-group $RESOURCE_GROUP \
+      --secrets "jwt-key=keyvaultref:${KV_JWT_URI},identityref:system" 2>/dev/null || true
+  fi
+
   ENV_NAME="Production"
   [ "$APP" = "${APP_NAME}-staging" ] && ENV_NAME="Staging"
 
@@ -286,6 +306,10 @@ for APP in "$APP_NAME" "${APP_NAME}-staging"; do
     "DataStore__SqlDatabase=$SQL_DB_NAME"
   )
   [ -n "${CORS_ALLOWED_ORIGINS:-}" ] && ENV_VARS+=("Cors__AllowedOrigins=$CORS_ALLOWED_ORIGINS")
+  # Use JWT key from Key Vault secret (if we added it above)
+  if az keyvault secret show --vault-name $KEYVAULT_NAME --name "TaskAgent-JwtKey" &>/dev/null; then
+    ENV_VARS+=("Jwt__Key=secretref:jwt-key")
+  fi
 
   az containerapp update --name $APP --resource-group $RESOURCE_GROUP \
     --set-env-vars "${ENV_VARS[@]}" 2>/dev/null || true

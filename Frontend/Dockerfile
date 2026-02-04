@@ -1,12 +1,16 @@
-# Build stage
+# Build stage: set VITE_API_BASE so UI talks to real API (not mock).
+# Empty = relative /api URLs (use when nginx proxies /api to backend).
+# Override with e.g. http://localhost:5001 when running frontend locally against Docker API.
 FROM node:20-alpine AS build
 WORKDIR /app
+
+ARG VITE_API_BASE=
+ENV VITE_API_BASE=${VITE_API_BASE}
 
 COPY package*.json ./
 RUN npm install --legacy-peer-deps
 
 COPY . .
-ENV VITE_API_BASE=
 RUN npm run build
 
 # Serve stage

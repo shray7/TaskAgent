@@ -332,12 +332,15 @@ export function useDashboard() {
         if (visible[0]) projectsStore.setCurrentProject(visible[0].id)
       }
     }
-    await sprintsStore.fetchSprints(projectsStore.currentProjectId)
-    sprintsStore.initializeSprints(projectsStore.currentProjectId)
-    await tasksStore.fetchTasks({
-      projectId: projectsStore.currentProjectId,
-      sprintId: sprintsStore.currentSprintId ?? undefined
-    })
+    const projectId = projectsStore.currentProjectId
+    if (projectId) {
+      await sprintsStore.fetchSprints(projectId)
+      sprintsStore.initializeSprints(projectId)
+      await tasksStore.fetchTasks({
+        projectId,
+        sprintId: sprintsStore.currentSprintId ?? undefined
+      })
+    }
   }
 
   onMounted(init)

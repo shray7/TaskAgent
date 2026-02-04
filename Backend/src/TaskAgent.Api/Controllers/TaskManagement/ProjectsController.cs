@@ -1,3 +1,5 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TaskAgent.Api.Services;
 using TaskAgent.Contracts.Dtos;
@@ -7,25 +9,36 @@ namespace TaskAgent.Api.Controllers.TaskManagement;
 
 [ApiController]
 [Route("api/tm/[controller]")]
+[Authorize]
 public class ProjectsController : ControllerBase
 {
     private readonly IProjectsService _projects;
 
     public ProjectsController(IProjectsService projects) => _projects = projects;
 
-    /// <summary>Get all active (non-deleted) projects</summary>
+    private int? GetCurrentUserId()
+    {
+        var sub = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
+        return int.TryParse(sub, out var id) ? id : null;
+    }
+
+    /// <summary>Get all active projects the current user can access (owner or in VisibleToUserIds)</summary>
     [HttpGet]
     public async Task<ActionResult<IEnumerable<ProjectDto>>> GetAll(CancellationToken ct)
     {
-        var list = await _projects.GetAllAsync(ct);
+        var userId = GetCurrentUserId();
+        if (userId == null) return Unauthorized(new ApiErrorDto("Invalid token."));
+        var list = await _projects.GetAllAsync(userId.Value, ct);
         return Ok(list);
     }
 
-    /// <summary>Get project by ID (only if not deleted)</summary>
+    /// <summary>Get project by ID (only if user has access and not deleted)</summary>
     [HttpGet("{id:int}")]
     public async Task<ActionResult<ProjectDto>> GetById(int id, CancellationToken ct)
     {
-        var p = await _projects.GetByIdAsync(id, ct);
+        var userId = GetCurrentUserId();
+        if (userId == null) return Unauthorized(new ApiErrorDto("Invalid token."));
+        var p = await _projects.GetByIdAsync(id, userId.Value, ct);
         if (p == null) return NotFound(new ApiErrorDto("Project not found"));
         return Ok(p);
     }

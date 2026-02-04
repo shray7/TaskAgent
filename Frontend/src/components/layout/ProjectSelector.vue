@@ -271,7 +271,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useNotificationsStore } from '@/stores/notifications'
 import { useProjectsStore } from '@/stores/projects'
 import { useTasksStore } from '@/stores/tasks'
@@ -331,6 +331,17 @@ const newProject = ref<{
   visibleColumns: [...defaultVisibleColumns],
   taskSizeUnit: 'hours'
 })
+
+watch(
+  () => projectsStore.openCreateProjectForm,
+  (val) => {
+    if (val) {
+      isOpen.value = true
+      showNewProjectForm.value = true
+      projectsStore.openCreateProjectForm = false
+    }
+  }
+)
 
 const currentUserId = computed(() => (authStore.user as { id: number } | null)?.id ?? 0)
 const visibleProjects = computed(() => projectsStore.getVisibleProjects(currentUserId.value))

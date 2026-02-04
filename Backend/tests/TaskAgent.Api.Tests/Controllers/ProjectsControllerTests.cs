@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
@@ -11,10 +12,17 @@ namespace TaskAgent.Api.Tests.Controllers;
 
 public class ProjectsControllerTests
 {
+    private const int TestUserId = 1;
+
     private readonly Mock<IProjectsService> _projectsMock = new();
 
-    private static ProjectsController CreateController(IProjectsService? service = null) =>
-        new(service!);
+    private static ProjectsController CreateController(IProjectsService service)
+    {
+        var controller = new ProjectsController(service);
+        var identity = new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, TestUserId.ToString()), new Claim("sub", TestUserId.ToString())], "Test");
+        controller.ControllerContext = new ControllerContext { HttpContext = new Microsoft.AspNetCore.Http.DefaultHttpContext { User = new ClaimsPrincipal(identity) } };
+        return controller;
+    }
 
     [Fact]
     public async Task GetAll_ReturnsOkWithList()
@@ -23,7 +31,7 @@ public class ProjectsControllerTests
         {
             new(1, "P1", "", "#6366f1", DateTime.UtcNow, null, null, 1, null, 14, null, "hours")
         };
-        _projectsMock.Setup(s => s.GetAllAsync(It.IsAny<CancellationToken>())).ReturnsAsync(expected);
+        _projectsMock.Setup(s => s.GetAllAsync(TestUserId, It.IsAny<CancellationToken>())).ReturnsAsync(expected);
         var controller = CreateController(_projectsMock.Object);
 
         var result = await controller.GetAll(default);
@@ -35,7 +43,7 @@ public class ProjectsControllerTests
     public async Task GetById_WhenFound_ReturnsOk()
     {
         var dto = new ProjectDto(1, "P1", "", "#6366f1", DateTime.UtcNow, null, null, 1, null, 14, null, "hours");
-        _projectsMock.Setup(s => s.GetByIdAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(dto);
+        _projectsMock.Setup(s => s.GetByIdAsync(1, TestUserId, It.IsAny<CancellationToken>())).ReturnsAsync(dto);
         var controller = CreateController(_projectsMock.Object);
 
         var result = await controller.GetById(1, default);
@@ -46,7 +54,7 @@ public class ProjectsControllerTests
     [Fact]
     public async Task GetById_WhenNotFound_ReturnsNotFound()
     {
-        _projectsMock.Setup(s => s.GetByIdAsync(999, It.IsAny<CancellationToken>())).ReturnsAsync((ProjectDto?)null);
+        _projectsMock.Setup(s => s.GetByIdAsync(999, TestUserId, It.IsAny<CancellationToken>())).ReturnsAsync((ProjectDto?)null);
         var controller = CreateController(_projectsMock.Object);
 
         var result = await controller.GetById(999, default);

@@ -29,19 +29,60 @@
           <SprintSelector />
         </div>
         <div class="header-right">
-          <ThemeToggle class="header-theme-toggle" />
-          <div class="user-pill">
-            <span class="user-avatar" :style="authStore.user ? { backgroundColor: getUserColor(authStore.user.id), color: '#fff' } : {}">{{ authStore.user ? getInitials(authStore.user) : '' }}</span>
-            <span class="user-name">{{ authStore.user?.name }}</span>
+          <div class="user-menu" ref="userMenuRef">
+            <button
+              type="button"
+              class="user-pill user-menu-trigger"
+              @click="toggleUserMenu"
+              :aria-expanded="userMenuOpen"
+              aria-haspopup="menu"
+            >
+              <span
+                class="user-avatar"
+                :style="authStore.user ? { backgroundColor: getUserColor(authStore.user.id), color: '#fff' } : {}"
+              >
+                {{ authStore.user ? getInitials(authStore.user) : '' }}
+              </span>
+              <span class="user-name">{{ authStore.user?.name }}</span>
+              <ChevronDown class="user-menu-caret" />
+            </button>
+            <transition name="menu-fade">
+              <div
+                v-if="userMenuOpen"
+                class="user-menu-dropdown"
+                role="menu"
+              >
+                <button type="button" class="user-menu-item" @click="handleThemeToggle">
+                  <Sun v-if="themeStore.theme === 'light'" class="menu-icon" />
+                  <Moon v-else class="menu-icon" />
+                  <span>Switch to {{ themeStore.theme === 'light' ? 'Dark' : 'Light' }} mode</span>
+                </button>
+                <button type="button" class="user-menu-item" @click="handleLogoutClick">
+                  <LogOut class="menu-icon" />
+                  <span>Log out</span>
+                </button>
+              </div>
+            </transition>
           </div>
-          <button @click="handleLogout" class="header-btn" title="Logout">
-            <LogOut class="btn-icon" />
-          </button>
         </div>
       </div>
     </header>
 
     <main class="main-content">
+      <!-- Empty state for new users with no projects -->
+      <div v-if="projectsStore.loaded && !currentProject" class="empty-state card animate-fade-in">
+        <div class="empty-state-icon">
+          <CheckSquare class="empty-icon" />
+        </div>
+        <h2 class="empty-state-title">Create your first project</h2>
+        <p class="empty-state-text">You don't have any projects yet. Create a project to start organizing tasks, sprints, and team collaboration.</p>
+        <button @click="projectsStore.openCreateProjectForm = true" class="btn btn-primary">
+          <Plus class="btn-icon" />
+          Create Project
+        </button>
+      </div>
+
+      <template v-else>
       <div class="content-header animate-fade-in">
         <div class="view-toggle">
           <button 
@@ -335,6 +376,7 @@
           :author-id="authStore.user.id"
         />
       </section>
+      </template>
     </main>
 
     <!-- Add member modal -->
@@ -374,7 +416,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useTasksStore } from '@/stores/tasks'
@@ -382,19 +424,60 @@ import { useProjectsStore } from '@/stores/projects'
 import { useSprintsStore } from '@/stores/sprints'
 import TaskCard from '@/features/dashboard/components/TaskCard.vue'
 import TaskForm from '@/features/dashboard/components/TaskForm.vue'
-import ThemeToggle from '@/components/ui/ThemeToggle.vue'
 import ProjectSelector from '@/components/layout/ProjectSelector.vue'
 import SprintSelector from '@/components/layout/SprintSelector.vue'
 import CommentList from '@/features/dashboard/components/CommentList.vue'
-import { Plus, ListTodo, Clock, CheckCircle, Filter, Users, LogOut, CheckSquare, List, Columns3, BarChart2, ChevronUp, ChevronDown, Trash2, ArrowUp, ArrowDown, LayoutDashboard, User as UserIcon, Settings } from 'lucide-vue-next'
+import { Plus, ListTodo, Clock, CheckCircle, Filter, Users, LogOut, CheckSquare, List, Columns3, BarChart2, ChevronUp, ChevronDown, Trash2, ArrowUp, ArrowDown, LayoutDashboard, User as UserIcon, Settings, Sun, Moon } from 'lucide-vue-next'
 import AnalyticsView from '@/features/analytics/components/AnalyticsView.vue'
 import { getInitials, getUserColor } from '@/utils/initials'
+import { useThemeStore } from '@/stores/theme'
 
 const router = useRouter()
 const authStore = useAuthStore()
 const tasksStore = useTasksStore()
 const projectsStore = useProjectsStore()
 const sprintsStore = useSprintsStore()
+const themeStore = useThemeStore()
+
+const userMenuOpen = ref(false)
+const userMenuRef = ref<HTMLElement | null>(null)
+
+const toggleUserMenu = () => {
+  userMenuOpen.value = !userMenuOpen.value
+}
+
+const closeUserMenu = () => {
+  userMenuOpen.value = false
+}
+
+const handleThemeToggle = () => {
+  themeStore.toggleTheme()
+  closeUserMenu()
+}
+
+const handleDocumentClick = (event: MouseEvent) => {
+  const target = event.target as Node | null
+  if (!userMenuRef.value || !target) return
+  if (!userMenuRef.value.contains(target)) {
+    userMenuOpen.value = false
+  }
+}
+
+const handleEscapeKey = (event: KeyboardEvent) => {
+  if (event.key === 'Escape') {
+    closeUserMenu()
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('click', handleDocumentClick)
+  document.addEventListener('keydown', handleEscapeKey)
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleDocumentClick)
+  document.removeEventListener('keydown', handleEscapeKey)
+})
 
 const showTaskForm = ref(false)
 const editingTask = ref(null)
@@ -636,6 +719,11 @@ const handleLogout = () => {
   router.push('/login')
 }
 
+const handleLogoutClick = () => {
+  closeUserMenu()
+  handleLogout()
+}
+
 const handleDeleteTask = async (taskId: number) => {
   if (confirm('Are you sure you want to delete this task?')) {
     await tasksStore.deleteTask(taskId)
@@ -864,6 +952,10 @@ onMounted(async () => {
   gap: 0.75rem;
 }
 
+.user-menu {
+  position: relative;
+}
+
 .user-pill {
   display: flex;
   align-items: center;
@@ -872,6 +964,23 @@ onMounted(async () => {
   background-color: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 9999px;
+}
+
+.user-menu-trigger {
+  color: var(--header-text);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.user-menu-trigger:hover,
+.user-menu-trigger:focus-visible {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.user-menu-trigger:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.35);
+  outline-offset: 2px;
 }
 
 .user-avatar {
@@ -892,6 +1001,74 @@ onMounted(async () => {
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--header-text);
+}
+
+.user-menu-caret {
+  width: 0.75rem;
+  height: 0.75rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.user-menu-dropdown {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  min-width: 12rem;
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-primary);
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  box-shadow: 0 24px 45px -24px rgba(15, 23, 42, 0.45);
+  z-index: 50;
+}
+
+.user-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.user-menu-item:hover {
+  background-color: var(--bg-hover);
+}
+
+.user-menu-item:focus-visible {
+  outline: 2px solid var(--btn-primary-bg);
+  outline-offset: 2px;
+}
+
+.menu-icon {
+  width: 1rem;
+  height: 1rem;
+  color: var(--text-secondary);
+}
+
+.user-menu-item:hover .menu-icon {
+  color: var(--btn-primary-bg);
+}
+
+.menu-fade-enter-active,
+.menu-fade-leave-active {
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.menu-fade-enter-from,
+.menu-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
 }
 
 .header-btn {

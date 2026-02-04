@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
@@ -11,15 +12,23 @@ namespace TaskAgent.Api.Tests.Controllers;
 
 public class SprintsControllerTests
 {
+    private const int TestUserId = 1;
+
     private readonly Mock<ISprintsService> _sprintsMock = new();
 
-    private static SprintsController CreateController(ISprintsService? service = null) => new(service!);
+    private static SprintsController CreateController(ISprintsService service)
+    {
+        var controller = new SprintsController(service);
+        var identity = new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, TestUserId.ToString()), new Claim("sub", TestUserId.ToString())], "Test");
+        controller.ControllerContext = new ControllerContext { HttpContext = new Microsoft.AspNetCore.Http.DefaultHttpContext { User = new ClaimsPrincipal(identity) } };
+        return controller;
+    }
 
     [Fact]
     public async Task GetById_WhenFound_ReturnsOk()
     {
         var dto = new SprintDto(1, 1, "S1", "", DateTime.UtcNow, DateTime.UtcNow.AddDays(14), "planning");
-        _sprintsMock.Setup(s => s.GetByIdAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(dto);
+        _sprintsMock.Setup(s => s.GetByIdAsync(1, TestUserId, It.IsAny<CancellationToken>())).ReturnsAsync(dto);
         var controller = CreateController(_sprintsMock.Object);
 
         var result = await controller.GetById(1, default);
@@ -30,7 +39,7 @@ public class SprintsControllerTests
     [Fact]
     public async Task GetById_WhenNotFound_ReturnsNotFound()
     {
-        _sprintsMock.Setup(s => s.GetByIdAsync(999, It.IsAny<CancellationToken>())).ReturnsAsync((SprintDto?)null);
+        _sprintsMock.Setup(s => s.GetByIdAsync(999, TestUserId, It.IsAny<CancellationToken>())).ReturnsAsync((SprintDto?)null);
         var controller = CreateController(_sprintsMock.Object);
 
         var result = await controller.GetById(999, default);

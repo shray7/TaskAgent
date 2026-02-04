@@ -38,6 +38,7 @@ coverage/
 .env.*
 .github-secrets.env
 !.env.example
+!**/.env.example
 !.env.pages.example
 
 # OS

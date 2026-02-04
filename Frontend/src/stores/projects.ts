@@ -11,8 +11,9 @@ export const useProjectsStore = defineStore(
   'projects',
   () => {
     const projects = ref<Project[]>([])
-    const currentProjectId = ref<number>(1)
+    const currentProjectId = ref<number>(0)
     const switchToDashboard = ref(false)
+    const openCreateProjectForm = ref(false)
     const loading = ref(false)
     const loaded = ref(false)
 
@@ -63,8 +64,8 @@ export const useProjectsStore = defineStore(
       if (result.success) {
         projects.value = projects.value.filter(p => p.id !== projectId)
         const first = projects.value[0]
-        if (currentProjectId.value === projectId && first) {
-          currentProjectId.value = first.id
+        if (currentProjectId.value === projectId) {
+          currentProjectId.value = first?.id ?? 0
         }
       }
       return result
@@ -102,7 +103,10 @@ export const useProjectsStore = defineStore(
 
     /** Sync currentProjectId with loaded projects (e.g. after fetch or rehydration). */
     function initializeProjects(): void {
-      if (projects.value.length === 0) return
+      if (projects.value.length === 0) {
+        currentProjectId.value = 0
+        return
+      }
       const hasCurrent = projects.value.some(p => p.id === currentProjectId.value)
       if (!hasCurrent) {
         currentProjectId.value = projects.value[0]!.id
@@ -113,6 +117,7 @@ export const useProjectsStore = defineStore(
       projects,
       currentProjectId,
       switchToDashboard,
+      openCreateProjectForm,
       currentProject,
       loading,
       loaded,

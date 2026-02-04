@@ -40,16 +40,27 @@
               />
             </div>
 
-            <div class="form-group">
+            <div class="form-group password-wrapper">
               <label for="password" class="form-label">Password</label>
-              <input
-                id="password"
-                v-model="password"
-                type="password"
-                required
-                class="input"
-                placeholder="Enter your password"
-              />
+              <div class="password-input-wrap">
+                <input
+                  id="password"
+                  v-model="password"
+                  :type="passwordVisible ? 'text' : 'password'"
+                  required
+                  class="input"
+                  placeholder="Enter your password"
+                />
+                <button
+                  type="button"
+                  class="password-toggle"
+                  :aria-label="passwordVisible ? 'Hide password' : 'Show password'"
+                  @click="passwordVisible = !passwordVisible"
+                >
+                  <Eye v-if="!passwordVisible" class="eye-icon" />
+                  <EyeOff v-else class="eye-icon" />
+                </button>
+              </div>
             </div>
 
             <div v-if="error" class="error-message animate-fade-in">
@@ -74,7 +85,7 @@
 
           <div class="demo-accounts">
             <button
-              v-for="user in authStore.users"
+              v-for="user in demoUsers"
               :key="user.id"
               type="button"
               @click="fillDemoAccount(user.email)"
@@ -99,18 +110,34 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import ThemeToggle from '@/components/ui/ThemeToggle.vue'
-import { CheckSquare, AlertCircle, ArrowRight } from 'lucide-vue-next'
+import { CheckSquare, AlertCircle, ArrowRight, Eye, EyeOff } from 'lucide-vue-next'
 import { getInitials, getUserColor } from '@/utils/initials'
+
+/** Demo accounts limited to these four; password: password123 */
+const DEMO_USERS_FALLBACK = [
+  { id: 1, name: 'Alice Johnson', email: 'alice@example.com', avatar: '👩‍💼' },
+  { id: 2, name: 'Bob Smith', email: 'bob@example.com', avatar: '👨‍💻' },
+  { id: 3, name: 'Carol Davis', email: 'carol@example.com', avatar: '👩‍🎨' },
+  { id: 4, name: 'David Wilson', email: 'david@example.com', avatar: '👨‍🔬' }
+] as const
 
 const router = useRouter()
 const authStore = useAuthStore()
 
+const demoUsers = computed(() => {
+  const fromStore = authStore.users.filter((u) =>
+    DEMO_USERS_FALLBACK.some((d) => d.email === u.email)
+  )
+  return fromStore.length > 0 ? fromStore : [...DEMO_USERS_FALLBACK]
+})
+
 const email = ref('')
 const password = ref('')
+const passwordVisible = ref(false)
 
 onMounted(() => {
   authStore.loadUsers()
@@ -130,7 +157,8 @@ const handleLogin = async () => {
   try {
     const result = await authStore.login(email.value, password.value)
     if (result.success) {
-      router.push('/dashboard')
+      await nextTick()
+      await router.push('/dashboard')
     } else {
       error.value = result.message || 'Invalid email or password'
     }
@@ -354,6 +382,39 @@ const handleLogin = async () => {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+}
+
+.password-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-input-wrap .input {
+  padding-right: 2.75rem;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  border-radius: 0.375rem;
+}
+
+.password-toggle:hover {
+  color: var(--text-secondary);
+}
+
+.password-toggle .eye-icon {
+  width: 1.125rem;
+  height: 1.125rem;
 }
 
 .form-label {
