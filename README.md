@@ -130,18 +130,6 @@ Set `Realtime__ServerUrl` in backend config; in Frontend `.env` set `VITE_REALTI
 **Realtime**
 - `cd Backend/realtime && npm run dev` – Socket.IO server (default port 3001)
 
-## Screenshots
-
-UI screenshots (light mode) for desktop, tablet, and mobile are generated with `npm run screenshots` from the Frontend directory. All captured screens:
-
-**[View all screenshots →](Frontend/screenshots/)**
-
-| Device  | Auth (login, signup) | Dashboard (list, board, analytics, task form) | My Tasks | Profile | Project Settings |
-|---------|----------------------|------------------------------------------------|----------|---------|------------------|
-| Desktop | [auth/](Frontend/screenshots/desktop/auth/) | [dashboard/](Frontend/screenshots/desktop/dashboard/) | [my-tasks/](Frontend/screenshots/desktop/my-tasks/) | [profile/](Frontend/screenshots/desktop/profile/) | [project-settings/](Frontend/screenshots/desktop/project-settings/) |
-| Tablet  | [auth/](Frontend/screenshots/tablet/auth/) | [dashboard/](Frontend/screenshots/tablet/dashboard/) | [my-tasks/](Frontend/screenshots/tablet/my-tasks/) | [profile/](Frontend/screenshots/tablet/profile/) | [project-settings/](Frontend/screenshots/tablet/project-settings/) |
-| Mobile  | [auth/](Frontend/screenshots/mobile/auth/) | [dashboard/](Frontend/screenshots/mobile/dashboard/) | [my-tasks/](Frontend/screenshots/mobile/my-tasks/) | [profile/](Frontend/screenshots/mobile/profile/) | [project-settings/](Frontend/screenshots/mobile/project-settings/) |
-
 ## Database Schema
 
 Below is a high-level overview of the core domain models used by TaskAgent. The primary entities are stored in either an in-memory store (development) or SQL Server, depending on configuration.  

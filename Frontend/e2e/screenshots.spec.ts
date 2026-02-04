@@ -44,7 +44,8 @@ async function setupAuth(page: import('@playwright/test').Page) {
   await page.goto('/login')
   await page.evaluate(
     (u) => {
-      localStorage.setItem('auth', JSON.stringify({ user: u }))
+      // Auth store requires both user and token; pinia-plugin-persistedstate key is 'auth'
+      localStorage.setItem('auth', JSON.stringify({ user: u, token: 'mock-jwt-for-screenshots' }))
       localStorage.setItem('theme', JSON.stringify({ theme: 'light' }))
       document.documentElement.classList.remove('dark')
       document.documentElement.classList.add('light')
