@@ -105,5 +105,4 @@ A single reference for all variables used by the backend, frontend, and realtime
 
 - [README.md](README.md) — Overview, features, quick start, deployment.
 - [docs/LOCAL_AND_STAGING.md](docs/LOCAL_AND_STAGING.md) — Checklist so the app works locally and in staging (JWT, CORS, env vars).
-- [Evaluation Guide](EVALUATION_GUIDE.md) — Architecture, trade-offs, frontend–backend communication, production considerations.
 - [docs/ENV.md](docs/ENV.md) — Environment variable reference.
