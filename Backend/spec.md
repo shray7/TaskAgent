@@ -90,7 +90,7 @@ public record UserDto(
 
 #### 2. TaskAgent.DataAccess (Class Library)
 
-**Purpose:** Data access layer containing repository interfaces, implementations for SQL and NoSQL stores, Entity Framework DbContext, and database entities.
+**Purpose:** Data access layer containing repository interfaces, EF Core implementations, DbContext, and database entities.
 
 **Contents:**
 - `Abstractions/` - Repository interfaces (`IRepository<T>`, `IUserRepository`, etc.)
@@ -98,15 +98,11 @@ public record UserDto(
 - `Sql/` - EF Core implementations
   - `AppDbContext.cs`
   - `Repositories/SqlUserRepository.cs`
-- `NoSql/` - MongoDB implementations
-  - `MongoDbContext.cs`
-  - `Repositories/MongoUserRepository.cs`
 - `Extensions/` - DI registration extensions (`ServiceCollectionExtensions.cs`)
 
 **NuGet Packages:**
 - `Microsoft.EntityFrameworkCore.SqlServer` (or `.Sqlite` for dev)
 - `Microsoft.EntityFrameworkCore.Design`
-- `MongoDB.Driver`
 
 **Example file - `Abstractions/IRepository.cs`:**
 ```csharp
@@ -211,7 +207,6 @@ app.Run();
 - `xunit`
 - `xunit.runner.visualstudio`
 - `Microsoft.EntityFrameworkCore.InMemory` (for EF Core testing)
-- `Mongo2Go` (optional, for MongoDB integration tests)
 
 ---
 
@@ -272,7 +267,6 @@ dotnet add tests/TaskAgent.DataAccess.Tests reference src/TaskAgent.DataAccess
 ```bash
 # DataAccess packages
 dotnet add src/TaskAgent.DataAccess package Microsoft.EntityFrameworkCore.SqlServer
-dotnet add src/TaskAgent.DataAccess package MongoDB.Driver
 
 # Test packages
 dotnet add tests/TaskAgent.Api.Tests package Moq

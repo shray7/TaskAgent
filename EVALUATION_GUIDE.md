@@ -94,7 +94,7 @@ This document addresses what we're looking for: **clean structure**, **architect
 - **Backend (local):** From repo root: `dotnet run --project Backend/src/TaskAgent.Api`. Optionally set `ConnectionStrings__SqlDb` and `Realtime__ServerUrl` (see [docs/ENV.md](docs/ENV.md)).
 - **Frontend (local):** `cd Frontend && npm install && npm run dev`. Set `VITE_API_BASE=http://localhost:5001` (and optionally `VITE_REALTIME_URL`) in `.env`.
 - **Realtime (optional):** `cd Backend/realtime && npm install && npm run dev` (default port 3001).
-- **Docker:** From repo root, `docker compose up --build` for API (and optionally `--profile databases` for SQL Server/MongoDB). See [README.md](README.md).
+- **Docker:** From repo root, `docker compose up --build` for API (and optionally `--profile databases` for SQL Server). See [README.md](README.md).
 - **Tests:** From repo root: `dotnet test TaskAgent.sln`. Frontend: `cd Frontend && npm run test:unit` and `npm run test:e2e`.
 
 This structure and documentation are intended to make the codebase easy to navigate, reason about, and run locally or in production.

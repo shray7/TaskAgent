@@ -33,6 +33,17 @@ Set in `.env` or `.env.local`. For production builds (e.g. GitHub Pages), use re
 |----------|-------------|---------|
 | `PORT` | HTTP port the server listens on. | `3001` (default) |
 
+## GitHub Actions (Synthetic Tests)
+
+Set in **Settings → Secrets and variables → Actions → Variables**.
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `STAGING_API_URL` | Staging API base URL for health checks. | `https://taskagent-api-staging.<env-id>.eastus.azurecontainerapps.io` |
+| `PRODUCTION_API_URL` | Production API base URL for health checks. | `https://taskagent-api.<env-id>.eastus.azurecontainerapps.io` |
+
+Get the FQDN: `az containerapp show --name taskagent-api-staging --resource-group rg-taskagent --query "properties.configuration.ingress.fqdn" -o tsv` (use `taskagent-api` for production).
+
 ## Docker Compose toggle (realtime off by default)
 
 Realtime is **disabled by default** when running via `docker compose up api`. To enable:

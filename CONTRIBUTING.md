@@ -74,7 +74,7 @@ From repo root:
 docker compose up --build
 ```
 
-- Starts the API only (InMemory). Add `--profile databases` to also run SQL Server and/or MongoDB.
+- Starts the API only (InMemory). Add `--profile databases` to also run SQL Server.
 - See [README.md](README.md) for full Docker and env options.
 
 ## Tests

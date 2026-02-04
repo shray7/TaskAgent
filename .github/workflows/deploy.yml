@@ -117,10 +117,12 @@ jobs:
             --image ${{ env.ACR_NAME }}.azurecr.io/taskagent:${{ github.sha }}
 
   # --- Production ---
+  # Uses environment "production-migration" so you can require reviewers for this step only.
+  # Configure: Settings → Environments → production-migration → Required reviewers
   migrate-production:
     needs: deploy-staging
     runs-on: ubuntu-latest
-    environment: production
+    environment: production-migration
     steps:
       - uses: actions/checkout@v4
 

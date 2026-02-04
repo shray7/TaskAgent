@@ -91,7 +91,7 @@ TaskAgent/
 docker compose up --build api
 ```
 
-API at **http://localhost:5001** (InMemory DB). Use `--profile databases` to add SQL Server / MongoDB. Realtime is **off by default**; use `--profile realtime` with `REALTIME_SERVER_URL=http://realtime:3001` in `.env` to enable.
+API at **http://localhost:5001** (InMemory DB). Use `--profile databases` to add SQL Server. Realtime is **off by default**; use `--profile realtime` with `REALTIME_SERVER_URL=http://realtime:3001` in `.env` to enable.
 
 **2. Frontend** — in another terminal:
 
@@ -132,10 +132,11 @@ Set `Realtime__ServerUrl` in backend config; in Frontend `.env` set `VITE_REALTI
 
 ## Database Schema
 
-Below is a high-level overview of the core domain models used by TaskAgent. The primary entities are stored in either an in-memory store (development), MongoDB, or SQL Server, depending on configuration.  
+Below is a high-level overview of the core domain models used by TaskAgent. The primary entities are stored in either an in-memory store (development) or SQL Server, depending on configuration.  
 **Most entities include an `IsDeleted` boolean field for soft deletes.**
 
-### **Task**
+<details>
+<summary><strong>Task</strong></summary>
 
 | Field         | Type     | Description                                                                            |
 |---------------|----------|----------------------------------------------------------------------------------------|
@@ -151,7 +152,10 @@ Below is a high-level overview of the core domain models used by TaskAgent. The 
 | CreatedAt     | DateTime | Timestamp when created                                                                 |
 | UpdatedAt     | DateTime | Timestamp when last updated                                                            |
 
-### **Board**
+</details>
+
+<details>
+<summary><strong>Board</strong></summary>
 
 | Field       | Type     | Description                                                                                                  |
 |-------------|----------|--------------------------------------------------------------------------------------------------------------|
@@ -163,7 +167,10 @@ Below is a high-level overview of the core domain models used by TaskAgent. The 
 | CreatedAt   | DateTime | Creation timestamp                                                                                           |
 | UpdatedAt   | DateTime | Last modified timestamp                                                                                      |
 
-### **Project**
+</details>
+
+<details>
+<summary><strong>Project</strong></summary>
 
 | Field       | Type     | Description                                                                    |
 |-------------|----------|--------------------------------------------------------------------------------|
@@ -175,7 +182,10 @@ Below is a high-level overview of the core domain models used by TaskAgent. The 
 | CreatedAt   | DateTime | Creation timestamp                                                             |
 | UpdatedAt   | DateTime | Last modified timestamp                                                        |
 
-### **Sprint**
+</details>
+
+<details>
+<summary><strong>Sprint</strong></summary>
 
 | Field       | Type     | Description                                                        |
 |-------------|----------|--------------------------------------------------------------------|
@@ -188,7 +198,10 @@ Below is a high-level overview of the core domain models used by TaskAgent. The 
 | CreatedAt   | DateTime | Creation timestamp                                                 |
 | UpdatedAt   | DateTime | Last modified timestamp                                            |
 
-### **Comment**
+</details>
+
+<details>
+<summary><strong>Comment</strong></summary>
 
 | Field       | Type     | Description                                                                                       |
 |-------------|----------|---------------------------------------------------------------------------------------------------|
@@ -200,7 +213,10 @@ Below is a high-level overview of the core domain models used by TaskAgent. The 
 | UpdatedAt   | DateTime | Last modified timestamp                                                                           |
 | IsDeleted   | bool     | Soft-delete flag                                                                                  |
 
-### **User**
+</details>
+
+<details>
+<summary><strong>User</strong></summary>
 
 | Field        | Type     | Description                                         |
 |--------------|----------|-----------------------------------------------------|
@@ -212,6 +228,8 @@ Below is a high-level overview of the core domain models used by TaskAgent. The 
 | IsDeleted    | bool     | Soft-delete flag                                    |
 | CreatedAt    | DateTime | Creation timestamp                                  |
 | UpdatedAt    | DateTime | Last modified timestamp                             |
+
+</details>
 
 ## User flows
 
@@ -251,7 +269,7 @@ Below is a high-level overview of the core domain models used by TaskAgent. The 
 
 | Area | Choice | Trade-off |
 |------|--------|-----------|
-| **Data store** | InMemory (dev) / SQL Server (prod) / optional MongoDB | Single backend supports multiple stores; schema and query patterns are tuned for relational use. Using MongoDB or InMemory means some SQL-specific features (e.g. rich migrations) are not used the same way. |
+| **Data store** | InMemory (dev) / SQL Server (prod) | Single backend; schema and query patterns are tuned for relational use. |
 | **Realtime** | Optional Socket.IO server | Keeps the main API stateless and simple; realtime is best-effort and not required for core CRUD. Adds an extra process and configuration to run. |
 | **Auth** | JWT in app; optional Azure AD for SQL | JWT is simple for SPA + API; no built-in refresh tokens or session revocation. Production SQL can use Azure AD RBAC instead of connection strings. |
 | **Soft deletes** | `IsDeleted` on entities | Keeps history and referential integrity without hard deletes; list and board queries must filter deleted rows. |
@@ -260,9 +278,34 @@ Below is a high-level overview of the core domain models used by TaskAgent. The 
 **Assumptions**
 
 - **Audience:** Small to medium teams; single-tenant or simple multi-tenant usage. No built-in org/workspace hierarchy or SSO.
-- **Scale:** Read/write volume and board concurrency are modest. InMemory is for dev only; production assumes a persistent store (SQL or Mongo) and a single API instance unless you add load balancing yourself.
+- **Scale:** Read/write volume and board concurrency are modest. InMemory is for dev only; production assumes SQL Server and a single API instance unless you add load balancing yourself.
 - **Environment:** Backend expects config via appsettings or env vars (e.g. `Jwt__Key`, `ConnectionStrings__SqlDb`, `Realtime__ServerUrl`). Frontend expects `VITE_API_BASE` (and optionally `VITE_REALTIME_ENABLED` + `VITE_REALTIME_URL` for realtime).
 - **Browser:** Modern browsers with JavaScript enabled; no hard requirement for offline or legacy browsers.
+
+## Scalability
+
+TaskAgent is designed for small to medium teams with modest read/write volume. The workload is **read-heavy** (typical ratio ~80:20 or higher—users view boards, lists, and analytics far more often than they create or edit tasks). Out of the box:
+
+- **API:** Stateless ASP.NET Core app; can be scaled horizontally behind a load balancer (e.g. Azure Container Apps with multiple replicas). Rate limiting (100 req/min per IP) protects against abuse.
+- **Database:** SQL Server or InMemory (dev). Production uses a single SQL instance; vertical scaling and connection pooling are the primary levers. For higher throughput, consider read replicas or read-through caching.
+- **Realtime:** Socket.IO server is a separate Node process. It is single-instance by default; scaling would require sticky sessions or a shared pub/sub (e.g. Redis) for multi-instance broadcasts.
+- **Frontend:** Static SPA (Vite build) served from GitHub Pages or CDN; scales with CDN edge caching and requires no server-side scaling.
+
+To scale further: add caching (e.g. Redis) for hot reads, shard or partition large tables, and introduce a message queue for background work if needed.
+
+## Future features
+
+Planned or potential enhancements:
+
+- **AI-assisted project management** — Use AI to help plan sprints, suggest task breakdowns from high-level goals, auto-assign tasks based on workload and skills, generate sprint summaries and retrospectives, and surface risks (e.g. overcommitted sprints, blockers, stale tasks). Could integrate with LLMs via API to draft task descriptions, improve titles, or propose priorities from context.
+- **Redis caching** — Add Redis (or similar) for read-through or cache-aside caching of hot data (projects, sprints, task lists, analytics) to improve read performance and reduce database load.
+- **UI input validation** — Client-side validation for forms (task creation, project/sprint setup, user inputs) with inline feedback, error messages, and format checks before submission.
+- **Integration tests for staging+** — Automated integration and E2E tests run against staging and higher environments (e.g. in CI or on schedule) to catch regressions before production.
+- **Pub/sub for real-time** — Replace or augment the current Socket.IO setup with a Redis-backed pub/sub model to support multi-instance realtime, richer event streams, and features like presence, typing indicators, or live notifications.
+- **Mobile apps** — Native or cross-platform (e.g. React Native, Flutter) for on-the-go task management and notifications.
+- **Integrations** — Slack, Microsoft Teams, GitHub, Jira, or calendar sync for tasks and deadlines.
+- **Advanced analytics** — Predictive burndown, velocity trends, cycle-time metrics, and custom dashboards.
+- **Recurring tasks** — Templates and schedules for repetitive work (stand-ups, reviews, maintenance).
 
 ---
 

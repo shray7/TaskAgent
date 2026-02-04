@@ -1,4 +1,8 @@
 # Synthetic checks for staging and production.
+# Configure URLs: Settings → Secrets and variables → Actions → Variables
+# - STAGING_API_URL: e.g. https://taskagent-api-staging.<env-id>.eastus.azurecontainerapps.io
+# - PRODUCTION_API_URL: e.g. https://taskagent-api.<env-id>.eastus.azurecontainerapps.io
+# Get FQDN from: az containerapp show --name <app> --resource-group rg-taskagent --query "properties.configuration.ingress.fqdn" -o tsv
 name: Synthetic Tests
 
 on:
@@ -15,17 +19,14 @@ on:
           - production
           - staging
 
-env:
-  PRODUCTION_URL: https://taskagent-api.azurecontainerapps.io
-  STAGING_URL: https://taskagent-api-staging.azurecontainerapps.io
-
 jobs:
   synthetic-tests:
-    name: Synthetic Tests
+    name: Synthetic Tests (${{ matrix.environment }})
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        environment: [staging, production]
+        # Production disabled for now; re-enable with ["staging", "production"] when PRODUCTION_API_URL is set
+        environment: ${{ github.event_name == 'workflow_dispatch' && fromJSON(format('["{0}"]', github.event.inputs.environment)) || fromJSON('["staging"]') }}
     steps:
       - uses: actions/checkout@v4
 
@@ -33,14 +34,29 @@ jobs:
         id: env
         run: |
           if [ "${{ matrix.environment }}" == "production" ]; then
-            echo "url=${{ env.PRODUCTION_URL }}" >> $GITHUB_OUTPUT
+            url="${{ vars.PRODUCTION_API_URL }}"
           else
-            echo "url=${{ env.STAGING_URL }}" >> $GITHUB_OUTPUT
+            url="${{ vars.STAGING_API_URL }}"
           fi
+          if [ -z "$url" ]; then
+            echo "::error::${{ matrix.environment }} API URL is not set. Add vars.STAGING_API_URL and vars.PRODUCTION_API_URL in Settings → Secrets and variables → Actions → Variables."
+            echo "Example: https://taskagent-api-staging.<env-id>.eastus.azurecontainerapps.io"
+            exit 1
+          fi
+          echo "url=$url" >> $GITHUB_OUTPUT
 
       - name: Health check (readiness)
         run: |
-          response=$(curl -sf -w "%{http_code}" "${{ steps.env.outputs.url }}/health/ready" -o /tmp/health.json)
+          url="${{ steps.env.outputs.url }}"
+          set +e
+          response=$(curl -sf -w "%{http_code}" -o /tmp/health.json "$url/health/ready" 2>/dev/null)
+          curl_exit=$?
+          set -e
+          if [ -z "$response" ]; then
+            echo "::error::curl failed (exit $curl_exit). Exit 6 = DNS resolution failed."
+            echo "Ensure vars.STAGING_API_URL and vars.PRODUCTION_API_URL are set in repo Settings."
+            exit 1
+          fi
           if [ "$response" != "200" ]; then
             echo "❌ Health check failed with status $response"
             cat /tmp/health.json || true

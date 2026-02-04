@@ -1,6 +1,6 @@
 # Run from repo root. UI runs locally (npm run dev); set Frontend/.env VITE_API_BASE=http://localhost:5001.
 # API only (InMemory):  docker compose up --build api
-# API + SQL/Mongo DBs: docker compose --profile databases up --build
+# API + SQL Server: docker compose --profile databases up --build
 # API + Realtime:      docker compose --profile realtime up --build (set REALTIME_SERVER_URL in .env)
 #
 # Realtime is OFF by default. To enable: add REALTIME_SERVER_URL=http://realtime:3001 to .env
@@ -57,17 +57,5 @@ services:
     profiles:
       - databases
 
-  # Optional: run only when using MongoDB for local dev
-  mongodb:
-    image: mongo:7
-    container_name: taskagent-mongodb
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongodb-data:/data/db
-    profiles:
-      - databases
-
 volumes:
   sqlserver-data:
-  mongodb-data:
