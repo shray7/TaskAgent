@@ -320,3 +320,7 @@ Planned or potential enhancements:
 - **Recurring tasks** — Templates and schedules for repetitive work (stand-ups, reviews, maintenance).
 
 ---
+
+For an evaluation-focused overview (architecture, trade-offs, frontend–backend communication, production considerations), see [Evaluation Guide](EVALUATION_GUIDE.md).
+
+---
