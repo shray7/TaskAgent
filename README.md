@@ -81,42 +81,33 @@ TaskAgent/
 └── docker-compose.yml
 ```
 
-## Quick Start
+## Quick Start (run locally)
 
-### Run with Docker
-
-From repo root:
+**1. Backend (Docker)** — from repo root:
 
 ```bash
-docker compose up --build
+docker compose up --build api
 ```
 
-- **API**: http://localhost:5001 (InMemory DB; use `--profile databases` to add SQL Server / MongoDB if needed).
-- API image is built from repo root (`context: .`, `dockerfile: Backend/Dockerfile`) so `TaskAgent.sln` and Backend code are available (same as in CI).
+API at **http://localhost:5001** (InMemory DB). Use `--profile databases` to add SQL Server / MongoDB.
 
-### Run locally (development)
+**2. Frontend** — in another terminal:
 
-**New to the repo?** For clone-and-run plus **working login**, see [CONTRIBUTING.md – First-time setup](CONTRIBUTING.md#first-time-setup-clone-and-run-with-login) (create `Frontend/.env` from `.env.example`, run backend then frontend).
-
-Commands are run from repo root where noted.
-
-**Backend:**
-```bash
-dotnet run --project Backend/src/TaskAgent.Api
-```
-
-**Frontend:**
 ```bash
 cd Frontend && npm install && npm run dev
 ```
 
-**Realtime (optional, for live board updates):**
+Create `Frontend/.env` from `.env.example` and set `VITE_API_BASE=http://localhost:5001` so the UI talks to the API. For clone-and-run with working login, see [CONTRIBUTING.md – First-time setup](CONTRIBUTING.md#first-time-setup-clone-and-run-with-login).
+
+**3. Realtime (optional)** — for live board updates:
+
 ```bash
 cd Backend/realtime && npm install && npm run dev
 ```
+
 Set `Realtime__ServerUrl` in backend config and `VITE_REALTIME_URL` in Frontend `.env` (see [docs/ENV.md](docs/ENV.md)).
 
-Set `VITE_API_BASE=http://localhost:5001` in Frontend `.env` for local API. For more detail and a full env reference, see [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/ENV.md](docs/ENV.md).
+**Backend without Docker:** `dotnet run --project Backend/src/TaskAgent.Api` from repo root. Full env reference: [CONTRIBUTING.md](CONTRIBUTING.md), [docs/ENV.md](docs/ENV.md).
 
 ## Scripts
 
@@ -131,7 +122,8 @@ Set `VITE_API_BASE=http://localhost:5001` in Frontend `.env` for local API. For 
 - `npm run format` – Format with Prettier
 
 **Backend**
-- From repo root: `dotnet run --project Backend/src/TaskAgent.Api` – Run API
+- From repo root: `docker compose up --build api` – Run API (Docker, default)
+- From repo root: `dotnet run --project Backend/src/TaskAgent.Api` – Run API (without Docker)
 - From repo root: `dotnet test TaskAgent.sln` – Run tests
 
 **Realtime**
