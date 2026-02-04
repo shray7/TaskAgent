@@ -1,3 +1,4 @@
+using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -54,7 +55,10 @@ public static class ServiceCollectionExtensions
             }
             else
             {
-                useSql = false;
+                throw new InvalidOperationException(
+                    "DataStore:Type is set to 'Sql', but no SQL connection information was provided. " +
+                    "Configure either DataStore:SqlServer and DataStore:SqlDatabase for managed identity/RBAC, " +
+                    "or ConnectionStrings:SqlDb for a full connection string.");
             }
         }
 

@@ -149,24 +149,6 @@ See [docs/ENV.md](docs/ENV.md) for a single reference of all environment variabl
 
 **Local and staging setup:** For a step-by-step checklist so the app works both locally and in staging (JWT, CORS, env vars), see [docs/LOCAL_AND_STAGING.md](docs/LOCAL_AND_STAGING.md).
 
-## Deployment
-
-### Backend
-
-Deployed to Azure Container Apps via `.github/workflows/deploy.yml` (staging then production). Uses Azure AD / RBAC for passwordless SQL access.
-
-### Frontend (GitHub Pages)
-
-Deployed via `.github/workflows/deploy-pages.yml`.
-
-1. **Log in to GitHub** (one-time): `gh auth login -h github.com -p https -w`
-2. **Create repo and push**: `gh repo create TaskAgent --public --source=. --push --description "TaskAgent - Vue.js task management with .NET backend"`
-3. **Enable Pages**: Repo → **Settings** → **Pages** → **Source**: **GitHub Actions**
-4. **API URL**: Settings → Secrets and variables → Actions → Variables → `VITE_API_BASE` = your staging backend URL (e.g. `https://taskagent-api-staging....azurecontainerapps.io`) so the built app calls your API.
-5. **Backend staging**: Set `Jwt__Key` (32+ character secret) on the staging Container App so login/register work. Set `Cors__AllowedOrigins` (or use `appsettings.Staging.json`) to your Pages URL. See [docs/LOCAL_AND_STAGING.md](docs/LOCAL_AND_STAGING.md).
-
-Workflow runs on push to `main`. App will be at **https://YOUR_USERNAME.github.io/TaskAgent/**.
-
 ---
 
 For an evaluation-focused overview (architecture, trade-offs, frontend–backend communication, production considerations), see [Evaluation Guide](EVALUATION_GUIDE.md).
